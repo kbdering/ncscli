@@ -29,7 +29,6 @@ class LocalJMeterFrameProcessor(batchRunner.frameProcessor):
         cmd = 'free --mega -t 1>&2'
         cmd += f" && {self._get_copy_jars_cmd()}"
         cmd += f" && {self._get_id_config_command()}"
-        cmd += f" && {self._get_update_properties_cmd()}"
         cmd += " && JVM_ARGS='%s -Xmx$(%s)' /opt/apache-jmeter/bin/jmeter.sh --version" % (self.JVM_ARGS, self.clause)
 
         # tougher pretest
@@ -45,7 +44,7 @@ class LocalJMeterFrameProcessor(batchRunner.frameProcessor):
         #return 'TestPlan_results_%03d.csv' % frameNum
 
     def frameCmd( self, frameNum ):
-        cmd = f"{self._get_id_config_command()} && "
+        cmd = f"{self._get_id_config_command(frameNum)} && "
         cmd += f"{self._get_split_files_cmd()} && "
         cmd += f"""cd {self.workerDirPath} && mkdir -p jmeterOut && JVM_ARGS="{self.JVM_ARGS} -Xmx$({self.clause})" /opt/apache-jmeter/bin/jmeter.sh -n -t {self.homeDirPath}/{self.workerDirPath}/{self.JMeterFilePath} -l jmeterOut/TestPlan_results.csv -D httpclient4.time_to_live=1 -D httpclient.reset_state_on_thread_group_iteration=true"""
         cmd += f" && mv jmeterOut ~/{self.frameOutFileName(frameNum)}"
