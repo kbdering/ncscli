@@ -1,0 +1,64 @@
+
+
+{
+    "description" : [
+        "Example test configuration for global test execution with parametrization",
+        "Supports spawning tests from multiple locations, with a fixed number of devices per region/country",
+        "Allows dataset files partitioning, allowing unique data distribution per device and per region"
+    ],
+
+    "testFile" : "globalPetStore.jmx",
+    "testDuration" : "3600",
+    
+    "globalTestParameters" : [
+        {"Threads" : 50},
+        {"RampUp" : 600},
+        {"TestHost" : "petstore.octoperf.com"}
+    ],
+    "device_requirements" : {
+        "dpr" : ">=48",
+        "dar" : ">90",
+        "ram" : ">=3800000000",
+        "storage" : ">=2000000000"
+    },
+    "device_count" : [
+        {
+            "region" : "usa",
+            "count" : 5,
+            "_comment" : "add other filters here"
+        },
+        {
+            "region" : "india",
+            "count" : 2
+        },
+        {
+            "region" : "russia",
+            "count" : 2
+        }
+    ],
+    "file_properties" : [
+        { 
+            "filename" : "USERS_russia.csv",
+            "partition_scope" : "REGIONAL",
+            "region" : "russia",
+            "contains_headers" : true
+        },
+        {
+            "filename" : "USERS_usa.csv",
+            "partition_scope" : "REGIONAL",
+            "region" : "usa",
+            "contains_headers" : true
+        },
+        {
+            "filename" : "USERS_india.csv",
+            "partition_scope" : "REGIONAL",
+            "region" : "india",
+            "contains_headers" : true
+        },
+        {
+            "filename" : "Global_IDS.csv",
+            "partition_scope" : "GLOBAL",
+            "contains_headers" : true
+        }
+    ]
+}
