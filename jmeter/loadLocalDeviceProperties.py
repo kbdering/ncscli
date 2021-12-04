@@ -63,5 +63,5 @@ def add_props_to_jmeter_properties(local_props):
 
 if __name__ == "__main__":
     localization_data = get_device_info()
-    localization_data["country"] = os.environ["CURRENT_LOCATION "]
+    localization_data["country"] = os.environ["CURRENT_LOCATION"]
     add_props_to_jmeter_properties(localization_data)
