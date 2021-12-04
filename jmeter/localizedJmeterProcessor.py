@@ -28,7 +28,6 @@ class LocalJMeterFrameProcessor(batchRunner.frameProcessor):
     def installerCmd( self ):
         cmd = 'free --mega -t 1>&2'
         cmd += f" && {self._get_copy_jars_cmd()}"
-        cmd += f" && {self._get_id_config_command()}"
         cmd += " && JVM_ARGS='%s -Xmx$(%s)' /opt/apache-jmeter/bin/jmeter.sh --version" % (self.JVM_ARGS, self.clause)
 
         # tougher pretest
