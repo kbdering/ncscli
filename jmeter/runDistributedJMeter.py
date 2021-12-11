@@ -6,6 +6,7 @@ import glob
 import logging
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -28,6 +29,7 @@ class JMeterFrameProcessor(batchRunner.frameProcessor):
     workerDirPath = 'jmeterWorker'
     #JMeterFilePath = workerDirPath+'/TestPlan.jmx'
     JMeterFilePath = workerDirPath+'/XXX.jmx'
+    jtlFileName = None
     JVM_ARGS ='-Xms30m -XX:MaxMetaspaceSize=64m -Dnashorn.args=--no-deprecation-warning'
     # a shell command that uses python psutil to get a recommended java heap size
     # computes available ram minus some number for safety, but not less than some minimum
@@ -36,6 +38,8 @@ class JMeterFrameProcessor(batchRunner.frameProcessor):
 
     def installerCmd( self ):
         cmd = 'free --mega -t 1>&2'  # to show amount of free ram
+        #cmd += ' && cat ~/.neocortix/device-location.properties'
+        cmd += ' && cat ~/.neocortix/device-location.properties >> /opt/apache-jmeter/bin/jmeter.properties'
         if glob.glob( os.path.join( self.workerDirPath, '*.jar' ) ):
             cmd += ' && cp -p %s/*.jar /opt/apache-jmeter/lib/ext' % self.workerDirPath  # for plugins
         cmd += " && JVM_ARGS='%s -Xmx$(%s)' /opt/apache-jmeter/bin/jmeter.sh --version" % (self.JVM_ARGS, self.clause)
@@ -53,11 +57,54 @@ class JMeterFrameProcessor(batchRunner.frameProcessor):
         #return 'TestPlan_results_%03d.csv' % frameNum
 
     def frameCmd( self, frameNum ):
-        cmd = '''cd %s && mkdir -p jmeterOut && JVM_ARGS="%s -Xmx$(%s)" /opt/apache-jmeter/bin/jmeter.sh -n -t %s/%s/%s -l jmeterOut/TestPlan_results.csv -D httpclient4.time_to_live=1 -D httpclient.reset_state_on_thread_group_iteration=true''' % (
-            self.workerDirPath, self.JVM_ARGS, self.clause, self.homeDirPath, self.workerDirPath, self.JMeterFilePath
+        propsClause = '-D neocortix.instanceNum=%d' % frameNum
+        cmd = '''cd %s && mkdir -p jmeterOut && JVM_ARGS="%s -Xmx$(%s)" /opt/apache-jmeter/bin/jmeter.sh -n -t %s/%s/%s -l jmeterOut/TestPlan_results.csv %s -D jmeter.save.saveservice.error_count=true -D jmeter.save.saveservice.sample_count=true -D httpclient4.time_to_live=1 -D httpclient.reset_state_on_thread_group_iteration=true''' % (
+            self.workerDirPath, self.JVM_ARGS, self.clause, self.homeDirPath, self.workerDirPath, self.JMeterFilePath, propsClause
         )
+        if self.jtlFileName:
+            cmd += ' && cp %s jmeterOut/ 2>/dev/null || true' % self.jtlFileName
         cmd += ' && mv jmeterOut ~/%s' % (self.frameOutFileName( frameNum ))
         return cmd
+
+    def interpretStdoutProgress( self, stdoutLine, **kwargs ):
+        def hhMmSsToSeconds( hhMmSs ):
+            h, m, s = hhMmSs.split(':')
+            return int(h) * 3600 + int(m) * 60 + int(s)
+
+        if 'summary +' in stdoutLine:
+            # a recent metrics line
+            pat = r'summary \+\s*([0-9]+) in\s*([0-9]+:[0-9]+:[0-9]+) =\s*([0-9]*\.[0-9]*)/s\s*Avg:\s*([0-9]*)\s*Min:\s*([0-9]*)\s*Max:\s*([0-9]*)\s*Err:\s*([0-9]*).*Active:\s([0-9]*)\s*Started:\s*([0-9]*)\s*Finished:\s*([0-9]*)'
+            match = re.search( pat, stdoutLine )
+            if match:
+                metrics = {
+                    'nReqs': int( match.group(1) ),
+                    'dur': hhMmSsToSeconds( match.group(2) ),
+                    'rps': float( match.group(3) ),
+                    'meanRt': int( match.group(4) ),
+                    'minRt': int( match.group(5) ),
+                    'maxRt': int( match.group(6) ),
+                    'nErrs': int( match.group(7) ),
+                    'threadsActive': int( match.group(8) ),
+                    'threadsStarted': int( match.group(9) ),
+                    'threadsFinished': int( match.group(10) ),
+                }
+                return {'recent': metrics }
+        elif 'summary =' in stdoutLine:
+            # a cumulative metrics line
+            pat = r'summary =\s*([0-9]+) in\s*([0-9]+:[0-9]+:[0-9]+) =\s*([0-9]*\.[0-9]*)/s\s*Avg:\s*([0-9]*)\s*Min:\s*([0-9]*)\s*Max:\s*([0-9]*)\s*Err:\s*([0-9]*)'
+            match = re.search( pat, stdoutLine )
+            if match:
+                metrics = {
+                    'nReqs': int( match.group(1) ),
+                    'dur': hhMmSsToSeconds( match.group(2) ),
+                    'rps': float( match.group(3) ),
+                    'meanRt': int(match.group(4) ),
+                    'minRt': int(match.group(5) ),
+                    'maxRt': int(match.group(6) ),
+                    'nErrs': int(match.group(7) ),
+                }
+                return {'cumulative': metrics }
+        return None
 
 
 # configure logger formatting
@@ -77,7 +124,7 @@ ap.add_argument( '--filter', help='json to filter instances for launch',
     )
 ap.add_argument( '--jmxFile', required=True, help='the JMeter test plan file path (required)' )
 ap.add_argument( '--jtlFile', help='the file name of the jtl file produced by the test plan (if any)',
-    default='TestPlan_results.csv'
+    default=None
     )
 ap.add_argument( '--planDuration', type=float, default=0, help='the expected duration of the test plan, in seconds' )
 ap.add_argument( '--workerDir', help='the directory to upload to workers',
@@ -118,15 +165,59 @@ if not jmeterBinPath:
     jmeterVersion = '5.4.1'  # 5.3 and 5.4.1 have been tested, others may work as well
     jmeterBinPath = scriptDirPath()+'/apache-jmeter-%s/bin/jmeter.sh' % jmeterVersion
 
+# parse the jmx file so we can find duration and jtl file references
+jmxTree = jmxTool.parseJmxFile( jmxFullerPath )
+
 # use given planDuration unless it is not positive, in which case extract from the jmx
 planDuration = args.planDuration
 if planDuration <= 0:
-    jmxTree = jmxTool.parseJmxFile( jmxFullerPath )
     planDuration = jmxTool.getDuration( jmxTree )
     logger.debug( 'jmxDur: %s seconds', planDuration )
 frameTimeLimit = max( round( planDuration * 1.5 ), planDuration+8*60 ) # some slop beyond the planned duration
 
 JMeterFrameProcessor.JMeterFilePath = jmxFilePath
+
+jtlFilePath = None
+if args.jtlFile:
+    jtlFilePath = args.jtlFile
+    if ':' in jtlFilePath:
+        logger.error( 'a colon was found in the jtlFile path' )
+        sys.exit( 1 )
+    # for now, reject any backslashes because they do not work on linux
+    if '\\' in jtlFilePath:
+        logger.error( 'backslashes are not allowed in the jtlFile path' )
+        sys.exit( 1 )
+    # replace backslash with slash, even though backslash is technically legal in posix
+    jtlFilePath = jtlFilePath.replace( '\\', '/' )
+    # normalize it (removes redundant slashes and other weirdness)
+    jtlFilePath = os.path.normpath( jtlFilePath )
+    # make sure it is not an absolute path
+    if jtlFilePath == os.path.abspath( jtlFilePath ):
+        logger.error( 'absolute paths are not supported for jtlFile path' )
+        sys.exit( 1 )
+    if '../' in jtlFilePath:
+        logger.error( '"../" is not supported for jtlFile path' )
+        sys.exit( 1 )
+
+    planJtlFiles = jmxTool.findJtlFileNames( jmxTree )
+    logger.info( 'planJtlFiles: %s', planJtlFiles )
+    normalizedJtlFiles = planJtlFiles
+    # don't replace backslashes for now
+    #normalizedJtlFiles = [path.replace( '\\', '/' ) for path in planJtlFiles]
+    normalizedJtlFiles = [os.path.normpath(path) for path in normalizedJtlFiles]
+    if jtlFilePath not in normalizedJtlFiles:
+        prepended = os.path.join( 'jmeterOut', jtlFilePath )
+        if prepended in normalizedJtlFiles:
+            # a hack to make old examples work
+            jtlFilePath = prepended
+        else:
+            logger.error( 'the given jtlFile was not found in the test plan' )
+            sys.exit( 1 )
+
+    JMeterFrameProcessor.jtlFileName = jtlFilePath
+if not jtlFilePath:
+    jtlFilePath = 'TestPlan_results.csv'
+logger.info( 'jtlFilePath: %s', jtlFilePath )
 
 nFrames = args.nWorkers
 #nWorkers = round( nFrames * 1.5 )  # old formula
@@ -134,6 +225,12 @@ nWorkers = math.ceil(nFrames*1.5) if nFrames <=10 else round( max( nFrames*1.12,
 
 dateTimeTag = datetime.datetime.now().strftime( '%Y-%m-%d_%H%M%S' )
 outDataDir = args.outDataDir
+
+# abort if outDataDir is not empty enough
+if os.path.isfile( outDataDir+'/batchRunner_results.jlog') \
+    or os.path.isfile( outDataDir+'/recruitLaunched.json'):
+    logger.error( 'please use a different outDataDir for each run' )
+    sys.exit( 1 )
 
 try:
     rc = batchRunner.runBatch(
@@ -169,7 +266,7 @@ try:
         if rc2:
             logger.warning( 'plotJMeterOutput exited with returnCode %d', rc2 )
  
-        jtlFileName = args.jtlFile  # make this match output file name from the .jmx (or empty if none)
+        jtlFileName = os.path.basename( jtlFilePath )
         if jtlFileName:
             nameParts = os.path.splitext(jtlFileName)
             mergedJtlFileName = nameParts[0]+'_merged_' + dateTimeTag + nameParts[1]

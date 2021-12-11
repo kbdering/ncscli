@@ -59,6 +59,7 @@ class g_:
     resultsLogFile = None
     resultsLogFilePath = None
     progressFilePath = None
+    progressLogFile = None
     deadline = None
     interrupted = False
     serverAliveInterval = 30
@@ -80,6 +81,9 @@ class frameProcessor(object):
 
     def frameCmd( self, frameNum ):
         return 'hostname > %s' % (self.frameOutFileName(frameNum))
+
+    def interpretStdoutProgress( self, stdoutLine, **kwargs ):
+        return None
 
 g_.frameProcessor = frameProcessor()
 
@@ -185,6 +189,13 @@ def logInstallerEvent( key, value, instanceId ):
 def logInstallerOperation( instanceId, opArgs ):
     # opArgs is a list containing the name of the op and its parameters
     logInstallerEvent( 'operation', opArgs, instanceId )
+
+def logProgress( instanceId, frameNum, reportedProgress ):
+    toLog = {'instanceId': instanceId, 'frameNum': frameNum,
+        'dateTime': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        'progress': reportedProgress }
+    print( json.dumps( toLog, sort_keys=True ), file=g_.progressLogFile )
+    g_.progressLogFile.flush()
 
 
 def boolArg( v ):
@@ -865,25 +876,21 @@ def renderFramesOnInstance( inst ):
             logStderr( line.rstrip(), iid )
 
     def trackStdout( proc ):
-        nonlocal frameProgress
         for line in proc.stdout:
             #print( '<stdout>', abbrevIid, line.strip(), file=sys.stderr )
-            # these progress-tracking details are specific for blender #TODO generalize
-            if 'Path Tracing Tile' in line:
-                pass
-                # yes, this progress-parsing code does work
-                pat = r'Path Tracing Tile ([0-9]+)/([0-9]+)'
-                match = re.search( pat, line )
-                if match:
-                    frameProgress = float( match.group(1) ) / float( match.group(2) )
-            elif '| Updating ' in line:
-                pass
-            elif '| Synchronizing object |' in line:
-                pass
-            elif line.strip():
+            # ask the frameProcessor to scan this stdout line for progress indicators
+            reportedProgress = None
+            try:
+                reportedProgress = g_.frameProcessor.interpretStdoutProgress( line )
+            except Exception as exc:
+                logger.warning( 'exception from interpretStdoutProgress (%s) %s ', type(exc), exc, exc_info=True )
+            if reportedProgress:
+                logProgress( iid, frameNum, reportedProgress )
+            if line.strip():
                 logStdout( line.rstrip(), iid )
                 if logLevel <= logging.INFO:
                     print( '<stdout>', abbrevIid, line.strip(), file=sys.stderr )
+                    sys.stderr.flush()
     nFailures = 0    
     while len( g_.framesFinished) < g_.nFramesWanted:
         if sigtermSignaled():
@@ -1186,6 +1193,18 @@ def checkInstanceClocks( instances, timeLimit ):
         logger.debug( 'returnCodes: %s', returnCodes )
     return returnCodes
 
+def deviceLocToProps( deviceLoc ):
+    ''' returns a multiline string that can be written to a java-standard properties file'''
+    # deviceLoc is assumed to be a dict that was converted from json
+    outStr = ''
+    for key, val in deviceLoc.items():
+        if isinstance( val, dict ):
+            for xx, yy in val.items():
+                outStr += 'neocortix.device-location.'+key + '.' + xx + '=' + str(yy) + '\n'
+        else:
+            outStr += 'neocortix.device-location.'+key + '=' + str(val) + '\n'
+    return outStr
+
 def pushDeviceLoc( inst, timeLimit=30 ):
     iid = inst['instanceId']
     logger.debug( 'would push deviceLoc to instance %s', iid[0:16] )
@@ -1196,10 +1215,13 @@ def pushDeviceLoc( inst, timeLimit=30 ):
         logFrameState( -1, 'pushDeviceLocStarting', iid )
         deviceLoc = inst['device-location']
         deviceLocJson = json.dumps( deviceLoc )
-        # trickily enquote and embedded apostrophes (single-quotes) for bash compatibility
+        deviceLocProps = deviceLocToProps( deviceLoc )
+        # trickily escape any embedded apostrophes (single-quotes) for bash compatibility
         deviceLocJson = deviceLocJson.replace( "'", r"'\''")
-        # generate a command to create the json file on the instance
+        deviceLocProps = deviceLocProps.replace( "'", r"'\''")
+        # generate a command to create the json file and props file on the instance
         cmd = "mkdir ~/.neocortix && echo '%s' > ~/.neocortix/device-location.json" % deviceLocJson
+        cmd += " && echo '%s' > ~/.neocortix/device-location.properties" % deviceLocProps
         logger.debug( 'cmd: %s', cmd )
         rc = commandInstance( inst, cmd, timeLimit=timeLimit )
         logFrameState( -1, 'pushDeviceLocDone', iid, rc )
@@ -1304,7 +1326,8 @@ def runBatch( **kwargs ):
     logger.debug('procID: %s', myPid)
 
     g_.progressFilePath = g_.dataDirPath + '/progress.json'
-    settingsJsonFilePath = g_.dataDirPath + '/settings.json'
+    progressLogPath = g_.dataDirPath + '/progress.jlog'
+    settingsJsonFilePath = g_.dataDirPath + '/batchRunner_settings.json'
     installerLogFilePath = g_.dataDirPath + '/recruitInstances.jlog'
     resultsLogFilePath = g_.dataDirPath+'/'+ \
         os.path.splitext( os.path.basename( __file__ ) )[0] + '_results.jlog'
@@ -1312,6 +1335,11 @@ def runBatch( **kwargs ):
         g_.resultsLogFile = open( resultsLogFilePath, "w", encoding="utf8" )
     else:
         g_.resultsLogFile = None
+    if progressLogPath:
+        g_.progressLogFile = open( progressLogPath, "w", encoding="utf8" )
+    else:
+        g_.progressLogFile = None
+
     argsToSave = vars(args).copy()
     del argsToSave['authToken']
     #del argsToSave['frameProcessor']
@@ -1510,7 +1538,7 @@ def createArgumentParser():
     ap.add_argument( '--authToken', required=True, help='the NCS authorization token to use (required)' )
     ap.add_argument( '--cookie', help='for internal use only' )
     ap.add_argument( '--outDataDir', help='output data darectory', default='./data/' )
-    ap.add_argument( '--pushDeviceLocs', type=boolArg, default=False, help='whether to store device location on each launched instance' )
+    ap.add_argument( '--pushDeviceLocs', type=boolArg, default=True, help='whether to store device location on each launched instance' )
     ap.add_argument( '--encryptFiles', type=boolArg, default=True, help='whether to encrypt files on launched instances' )
     ap.add_argument( '--filter', help='json to filter instances for launch' )
     ap.add_argument( '--frameTimeLimit', type=int, default=8*60*60, help='amount of time (in seconds) allowed for each frame' )
