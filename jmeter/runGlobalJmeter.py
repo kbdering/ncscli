@@ -96,8 +96,6 @@ total_devices_required = 0
 for device_prop in device_count:
     total_devices_required += device_prop["count"]
 
-
-
 """"
 
 
@@ -106,7 +104,28 @@ HERE SHOULD BE THE CODE TO EXECUTE BATCHES IN PARALLEL
 
 """
 
-
+def executeBatch(frameProcessor, filters, timeLimit, nWorkers):
+    try:
+        rc = batchRunner.runBatch(
+            frameProcessor = frameProcessor,
+            commonInFilePath = frameProcessor.workerDirPath,
+            authToken = args.authToken or os.getenv( 'NCS_AUTH_TOKEN' ) or 'YourAuthTokenHere',
+            cookie = args.cookie,
+            encryptFiles=False,
+            timeLimit = timeLimit + 40*60,
+            instTimeLimit = 6*60,
+            frameTimeLimit = frameTimeLimit,
+            filter = filters,
+            outDataDir = outDataDir,
+            startFrame = 1,
+            endFrame = nWorkers,
+            nWorkers = nWorkers,
+            limitOneFramePerWorker = True,
+            autoscaleMax = 1
+        )
+    except KeyboardInterrupt:
+        print("Interruption occured")
+    return rc
 
 nFrames = args.nWorkers
 #nWorkers = round( nFrames * 1.5 )  # old formula
@@ -116,25 +135,6 @@ dateTimeTag = datetime.datetime.now().strftime( '%Y-%m-%d_%H%M%S' )
 outDataDir = args.outDataDir
 
 try:
-    rc = batchRunner.runBatch(
-        frameProcessor = JMeterFrameProcessor(),
-        commonInFilePath = JMeterFrameProcessor.workerDirPath,
-        authToken = args.authToken or os.getenv( 'NCS_AUTH_TOKEN' ) or 'YourAuthTokenHere',
-        cookie = args.cookie,
-        encryptFiles=False,
-        timeLimit = frameTimeLimit + 40*60,
-        instTimeLimit = 6*60,
-        frameTimeLimit = frameTimeLimit,
-        filter = args.filter,
-        #filter = '{ "regions": ["usa", "india"], "dar": "==100", "dpr": ">=48", "ram": ">=3800000000", "storage": ">=2000000000" }',
-        #filter = '{ "regions": ["usa", "india"], "dar": "==100", "dpr": ">=48", "ram": ">=2800000000", "app-version": ">=2.1.11" }',
-        outDataDir = outDataDir,
-        startFrame = 1,
-        endFrame = nFrames,
-        nWorkers = nWorkers,
-        limitOneFramePerWorker = True,
-        autoscaleMax = 1
-    )
     if (rc == 0) and os.path.isfile( outDataDir +'/recruitLaunched.json' ):
         rampStepDuration = args.rampStepDuration
         SLODuration = args.SLODuration
