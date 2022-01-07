@@ -1,0 +1,841 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.4.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="Set Common Properties" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">1</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </SetupThreadGroup>
+      <hashTree>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="Calculate constant latency to the target server" enabled="true">
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="script">SampleResult.setIgnore(); // Ignores this sampler from reporting
+
+/*
+ * Pseudo-distance from server to calculate constant latency per location
+ * This code assumes the earth is flat and lattitude and longitude lines are equidistant for simplicity
+ * 
+ * Default server location is somewhere in San Francisco,CA
+ */
+
+ var AVG_LAT_DISTANCE_KM = 111;
+ var AVG_LON_DISTANCE_KM = 85;
+ 
+ var deviceLat = Double.parseDouble(props.get(&quot;lat&quot;,&quot;54.16&quot;));
+ var deviceLon = Double.parseDouble(props.get(&quot;lon&quot;, &quot;18.36&quot;));
+ var serverLat = Double.parseDouble(props.get(&quot;serverLat&quot;, &quot;36.7783&quot;));
+ var serverLon = Double.parseDouble(props.get(&quot;serverLon&quot;, &quot;119.4179&quot;));
+
+ var latDiff = serverLat - deviceLat;
+ var lonDiff = serverLon - deviceLon;
+ 
+ var latDistance = latDiff * AVG_LAT_DISTANCE_KM;
+ var lonDistance = lonDiff * AVG_LON_DISTANCE_KM;
+ 
+ var pseudoDistance = Math.sqrt(Math.pow(latDistance, 2) + Math.pow(lonDistance, 2));
+
+props.put(&quot;CONSTANT_LATENCY&quot;, String.valueOf(Math.round(pseudoDistance / 300)));
+
+
+
+
+ 
+
+ </stringProp>
+          <stringProp name="scriptLanguage">groovy</stringProp>
+        </JSR223Sampler>
+        <hashTree/>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="C00-Create New Order" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <intProp name="LoopController.loops">-1</intProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(CreateNewOrderThreads, 1)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(CreateNewOrderRampUp, 1)}</stringProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+        <stringProp name="ThreadGroup.duration">${__P(CreateNewOrderDuration, 100)}</stringProp>
+        <stringProp name="ThreadGroup.delay">${__P(CreateNewOrderDelay, 1)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <boolProp name="ThreadGroup.delayedStart">true</boolProp>
+        <stringProp name="TestPlan.comments">Sample Scenario of a customer creating a new order in the shop</stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C01-Open Index Page" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">true</boolProp>
+        </TransactionController>
+        <hashTree>
+          <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C01-Open Index Page ${__P(location, Poland)}" enabled="true">
+            <boolProp name="WAITING">true</boolProp>
+            <boolProp name="SUCCESFULL">true</boolProp>
+            <stringProp name="RESPONSE_CODE">200</stringProp>
+            <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+            <stringProp name="REQUEST_DATA"></stringProp>
+            <stringProp name="RESPONSE_DATA">&lt;html lang=en&gt; 
+&lt;head\&gt;
+
+&lt;body&gt;
+Welcome to our shop!
+Our merchendise is always available, even when our website says otherwise!
+&lt;/body&gt;
+&lt;html&gt;
+</stringProp>
+            <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="URL"></stringProp>
+            <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+          </kg.apc.jmeter.samplers.DummySampler>
+          <hashTree/>
+        </hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C02-Log In" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">true</boolProp>
+        </TransactionController>
+        <hashTree>
+          <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C02-Log In ${__P(location, Poland)}" enabled="true">
+            <boolProp name="WAITING">true</boolProp>
+            <boolProp name="SUCCESFULL">true</boolProp>
+            <stringProp name="RESPONSE_CODE">200</stringProp>
+            <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+            <stringProp name="REQUEST_DATA">{
+   &quot;username&quot; : &quot;${username}&quot;,
+   &quot;password&quot; : &quot;${password}&quot;
+}</stringProp>
+            <stringProp name="RESPONSE_DATA">{
+  &quot;session&quot; : &quot;${__RandomString(15,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUWXYZ)}&quot;
+}</stringProp>
+            <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="URL"></stringProp>
+            <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+          </kg.apc.jmeter.samplers.DummySampler>
+          <hashTree>
+            <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Session Extractor" enabled="true">
+              <stringProp name="JSONPostProcessor.referenceNames">SESSION</stringProp>
+              <stringProp name="JSONPostProcessor.jsonPathExprs">$.session</stringProp>
+              <stringProp name="JSONPostProcessor.match_numbers">0</stringProp>
+              <stringProp name="TestPlan.comments">Extracts the session parameter from response </stringProp>
+            </JSONPostProcessor>
+            <hashTree/>
+            <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
+              <stringProp name="delimiter">,</stringProp>
+              <stringProp name="fileEncoding"></stringProp>
+              <stringProp name="filename">users-${deviceID}-${location}.csv</stringProp>
+              <boolProp name="ignoreFirstLine">true</boolProp>
+              <boolProp name="quotedData">false</boolProp>
+              <boolProp name="recycle">true</boolProp>
+              <stringProp name="shareMode">shareMode.all</stringProp>
+              <boolProp name="stopThread">false</boolProp>
+              <stringProp name="variableNames">username,password</stringProp>
+            </CSVDataSet>
+            <hashTree/>
+          </hashTree>
+        </hashTree>
+        <LoopController guiclass="LoopControlPanel" testclass="LoopController" testname="Add Products to cart" enabled="true">
+          <boolProp name="LoopController.continue_forever">true</boolProp>
+          <stringProp name="LoopController.loops">4</stringProp>
+        </LoopController>
+        <hashTree>
+          <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C03-Browse Products" enabled="true">
+            <boolProp name="TransactionController.includeTimers">false</boolProp>
+            <boolProp name="TransactionController.parent">true</boolProp>
+          </TransactionController>
+          <hashTree>
+            <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C03-Browse Products ${__P(location, Poland)}" enabled="true">
+              <boolProp name="WAITING">true</boolProp>
+              <boolProp name="SUCCESFULL">true</boolProp>
+              <stringProp name="RESPONSE_CODE">200</stringProp>
+              <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+              <stringProp name="REQUEST_DATA"></stringProp>
+              <stringProp name="RESPONSE_DATA">{
+ &quot;products&quot; : [
+     { &quot;productId&quot; : 1, &quot;name&quot; : &quot;First Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 2, &quot;name&quot; : &quot;Second Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 3, &quot;name&quot; : &quot;Third Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 4, &quot;name&quot; : &quot;Fourth Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 5, &quot;name&quot; : &quot;Fifth Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 6, &quot;name&quot; : &quot;Sixth Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+   ]
+} </stringProp>
+              <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+              <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+              <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+              <stringProp name="URL"></stringProp>
+              <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+            </kg.apc.jmeter.samplers.DummySampler>
+            <hashTree>
+              <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="JSON Extractor" enabled="true">
+                <stringProp name="JSONPostProcessor.referenceNames">Product</stringProp>
+                <stringProp name="JSONPostProcessor.jsonPathExprs">$.products[*].productId</stringProp>
+                <stringProp name="JSONPostProcessor.match_numbers">0</stringProp>
+              </JSONPostProcessor>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
+          <RandomController guiclass="RandomControlGui" testclass="RandomController" testname="Random Controller" enabled="true">
+            <intProp name="InterleaveControl.style">1</intProp>
+          </RandomController>
+          <hashTree>
+            <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C04-Open Product ${Product}" enabled="true">
+              <boolProp name="TransactionController.includeTimers">false</boolProp>
+              <boolProp name="TransactionController.parent">true</boolProp>
+            </TransactionController>
+            <hashTree>
+              <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C04-Open Product ${Product} ${__P(location, Poland)}" enabled="true">
+                <boolProp name="WAITING">true</boolProp>
+                <boolProp name="SUCCESFULL">true</boolProp>
+                <stringProp name="RESPONSE_CODE">200</stringProp>
+                <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+                <stringProp name="REQUEST_DATA"></stringProp>
+                <stringProp name="RESPONSE_DATA">
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eget sagittis diam. Curabitur ultricies blandit orci. Donec tristique eleifend pellentesque. Vestibulum a quam nunc. Nunc aliquam lacus a justo ultricies, in sodales sapien tincidunt. Aliquam varius turpis id nisi aliquet, vitae tincidunt nisi volutpat. Praesent sollicitudin lorem quis lectus tincidunt tincidunt.
+
+Pellentesque viverra dolor tincidunt arcu sollicitudin finibus. Donec non elit sit amet velit varius lobortis. Quisque facilisis sagittis neque, et efficitur elit sollicitudin sit amet. In vitae augue at sem sodales mollis eu a diam. Ut risus mi, ullamcorper hendrerit pharetra a, euismod et eros. Aliquam vel erat hendrerit, scelerisque tortor sed, pretium ex. Quisque dolor sapien, imperdiet quis vestibulum a, ultrices et elit. Praesent varius ligula sit amet orci eleifend, vitae vehicula eros interdum. Donec vel suscipit ligula. Curabitur blandit purus non dapibus vestibulum. Vivamus aliquam purus vitae justo mollis finibus. Maecenas suscipit commodo consectetur. Ut sit amet fermentum leo. Vivamus at elit varius, elementum mauris id, feugiat diam.
+
+Cras lacinia mauris eget erat semper, in dapibus velit finibus. Duis finibus quam quam, vel rutrum urna ultrices et. Morbi ornare scelerisque tincidunt. Nulla quis nibh urna. Nullam sodales fermentum urna, sed consequat velit pretium mattis. Vestibulum elementum enim euismod lacus gravida, at hendrerit metus lacinia. Maecenas varius a ante non porttitor. Sed enim quam, convallis pellentesque egestas vel, ullamcorper vel neque.
+
+Proin cursus efficitur placerat. Morbi lacinia felis eu magna suscipit rutrum. Mauris ex risus, dignissim at luctus et, pellentesque non erat. Integer sit amet urna tortor. Nunc et condimentum massa, vel fermentum nunc. Ut euismod mi ante, euismod commodo elit sodales in. Nunc fringilla vulputate turpis, id dictum quam scelerisque eu.
+
+Sed eu nunc non nisi mollis tempor a eget est. Nullam tellus arcu, facilisis sed aliquet eu, facilisis eget urna. Fusce lacus felis, iaculis vel pharetra sit amet, semper eget purus. Pellentesque nulla ipsum, tempus sit amet arcu ac, vestibulum venenatis enim. Nam ac varius velit. Vivamus tincidunt metus augue. Nunc congue ex augue, id vestibulum sem hendrerit eu. Fusce rutrum dui eu purus porta vulputate. Duis facilisis odio et pellentesque sollicitudin. Etiam mattis libero non nunc fringilla, ac auctor sapien tincidunt. Etiam nulla elit, vulputate vitae magna a, finibus tempus orci. Maecenas ac enim dictum, scelerisque justo vitae, hendrerit diam. Quisque suscipit lorem ipsum, et placerat mi sollicitudin convallis.
+
+Maecenas a diam sit amet lacus commodo varius. Maecenas consectetur arcu a neque venenatis luctus. Suspendisse vitae interdum augue. Pellentesque tempus tellus vel ante bibendum, quis sagittis nisl rhoncus. Sed consectetur lacinia sapien ac interdum. Mauris pulvinar, est ac rutrum semper, ex sapien aliquam eros, a volutpat sem dolor non dui. Mauris sem nisi, luctus non consectetur ac, bibendum id mauris. Nunc dictum convallis cursus. Nullam a consequat nisl. Donec nec metus elementum, iaculis enim et, porttitor nibh. Suspendisse porta nibh ipsum, vitae vulputate quam fringilla sit amet. Quisque hendrerit velit dolor, et gravida augue pellentesque non. Cras egestas posuere malesuada. Nam eleifend lectus vitae justo congue, sed venenatis nisi tempor. Cras consequat, nisi sit amet auctor pharetra, sapien augue euismod augue, non lobortis nibh ex et nulla.
+
+Donec ultrices purus dui, ac tristique justo iaculis vitae. Donec ac elit vel nunc hendrerit mollis. Mauris mattis ligula fringilla quam pulvinar, sit amet finibus lacus elementum. Integer non diam non ante tincidunt facilisis ut quis nibh. Nam pulvinar fringilla felis. Nunc vel velit cursus, commodo quam nec, finibus nisi. Aliquam eget faucibus urna. Praesent malesuada eros vel tellus blandit, sed varius nulla luctus. Donec vel porta arcu. Nulla nunc libero, laoreet ornare fringilla sit amet, consectetur at sapien. Maecenas ultrices finibus sodales.
+
+Cras eget turpis vel nibh eleifend consequat at pretium leo. In mattis fermentum dapibus. Curabitur ac mauris leo. Aenean et mollis enim, eu feugiat metus. Nulla facilisi. Maecenas eleifend faucibus turpis a sagittis. Sed vitae egestas elit. Fusce congue quis nisl sit amet tincidunt. Quisque at semper felis, at congue leo.
+
+Mauris vestibulum felis magna, et iaculis ligula cursus in. Donec porta, magna eget viverra interdum, nisl ligula pretium diam, sit amet pellentesque purus eros nec nibh. Nam at justo leo. Proin imperdiet lorem a consectetur ultricies. Donec diam lorem, molestie non dignissim id, pretium id arcu. Phasellus sed gravida leo. Duis consectetur dui purus, eget congue ipsum mollis sed. Sed sed sem sit amet massa posuere porta. Aenean quis bibendum lorem. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean iaculis ornare nibh in blandit.
+
+Aenean sit amet quam feugiat, tincidunt massa posuere, dignissim enim. Donec tristique justo vel diam tempor, vitae dictum nunc molestie. Aenean egestas porttitor dui non consequat. Nam sed turpis fringilla, interdum velit eu, tempor orci. Etiam tincidunt fringilla augue, sit amet euismod mi congue quis. Nam semper posuere quam, ut tristique risus sollicitudin a. Quisque eu molestie metus, luctus maximus orci.
+
+Donec facilisis justo a consequat sodales. Mauris non justo in nisl commodo suscipit rutrum in erat. Nunc ultrices ultricies urna sed hendrerit. Vestibulum tincidunt dignissim magna, vitae bibendum leo ultricies ac. Vivamus ullamcorper rutrum nunc ac consectetur. Etiam at justo ac erat convallis vulputate. Donec vel vestibulum turpis. Vivamus et odio commodo, porta mauris non, porttitor ante. Ut mattis auctor purus, vel tincidunt dui blandit a. Nulla sollicitudin leo sit amet arcu accumsan, sed rutrum nisl auctor. Vivamus blandit urna ac cursus rutrum. Pellentesque in fermentum purus.
+
+Cras augue dui, sodales eget pulvinar ac, maximus id elit. Integer pulvinar urna erat, non placerat leo volutpat ut. Proin sit amet suscipit sapien. Praesent nec vulputate justo. Cras ac maximus dolor. Mauris imperdiet urna nec viverra porttitor. Integer venenatis dolor vitae ante dignissim tempor. Nullam auctor lorem enim, sit amet malesuada tellus iaculis et. Nam rhoncus facilisis suscipit. Suspendisse potenti. Vivamus at eleifend mi. Duis viverra lacus dui, nec condimentum risus imperdiet ac. Fusce ex eros, dapibus ac purus a, aliquet iaculis purus. Sed pellentesque purus ullamcorper facilisis aliquet.
+
+Mauris ultricies orci imperdiet sem rhoncus, a molestie ex pulvinar. Vestibulum quis metus augue. Proin ac nunc porttitor, hendrerit erat vitae, viverra odio. Maecenas purus mi, accumsan at nisi luctus, tristique interdum ligula. Curabitur orci lorem, dignissim et dui non, faucibus tempor quam. Praesent eros mauris, dignissim eu augue in, cursus scelerisque nisl. Pellentesque eu ligula nisl.
+
+Mauris pretium blandit lacus sed suscipit. Praesent non aliquam est, eget porta sem. Aliquam ac aliquam sapien, eget consectetur neque. Donec pharetra gravida dui, et sollicitudin odio molestie eget. Nam ac ornare nisl, ac feugiat quam. Nulla efficitur massa non sapien ornare malesuada. Nunc molestie hendrerit feugiat. Integer quis erat lobortis, facilisis ante in, pulvinar nisl. Nullam ipsum erat, mollis et odio sit amet, finibus dignissim purus. Mauris consectetur ornare porta.
+
+Morbi volutpat interdum auctor. Integer viverra egestas erat, tincidunt tristique nibh elementum vel. Fusce bibendum ac lacus quis mattis. Quisque at vestibulum est, a dignissim leo. Quisque lacinia risus eu iaculis vestibulum. Aliquam fermentum scelerisque ultrices. Aliquam erat volutpat. Vivamus at ex odio. Duis consectetur ipsum sit amet tellus feugiat, faucibus maximus neque volutpat. Ut congue diam id enim euismod interdum.
+
+Praesent gravida orci a diam faucibus porttitor. Integer bibendum, urna at mollis consequat, sem neque bibendum tellus, at efficitur tortor ex et sapien. Quisque dapibus tortor in sapien ornare viverra non at orci. Morbi pretium, arcu a mollis dictum, nulla urna hendrerit arcu, ut finibus arcu nisl ut sem. Nunc hendrerit mauris enim. Aenean fermentum ut tellus ac varius. Praesent in commodo orci. Fusce eget posuere ligula, et elementum ante.
+
+Nam eget molestie ex, ac varius ipsum. Nulla eleifend lacinia volutpat. Vestibulum non nisl eget enim luctus feugiat quis sit amet lorem. Donec sed purus scelerisque, rhoncus metus mollis, efficitur nunc. Proin velit sapien, congue ullamcorper mi sed, luctus porta turpis. Vestibulum semper finibus feugiat. Maecenas convallis lectus quis erat efficitur, id volutpat justo dapibus. Praesent aliquam leo eu sapien vulputate, vel lacinia tortor tempus. Fusce sodales aliquam sollicitudin. Pellentesque cursus vulputate mauris, quis vestibulum quam malesuada vel. Nulla leo magna, pretium quis magna in, posuere dignissim lectus.
+
+Sed accumsan lectus ut sollicitudin consequat. Aliquam cursus orci eu purus vulputate sagittis. Suspendisse aliquet turpis et varius commodo. Ut tincidunt sapien quis purus scelerisque, eget congue urna tristique. Sed sit amet volutpat sapien, non faucibus lectus. Fusce laoreet congue rutrum. Nulla dapibus felis sit amet fringilla pretium. Donec in efficitur libero. Mauris eget tellus arcu. Mauris commodo lobortis turpis, vel vehicula tellus pellentesque a. Pellentesque nec quam vulputate nisl lacinia volutpat.
+
+Mauris viverra, neque sit amet tempor mollis, lectus sapien dignissim ligula, nec porta lectus dui ut quam. Integer a efficitur lacus, nec egestas elit. Nunc ante tortor, porttitor a hendrerit in, pharetra sit amet ipsum. Duis ut malesuada quam, ornare rutrum lorem. Duis nec ligula id ipsum pharetra consequat. Phasellus mattis, odio eget efficitur bibendum, mi elit malesuada diam, in pulvinar leo diam vitae dolor. Nulla efficitur ex et ante tempus condimentum.
+
+Morbi lectus risus, venenatis sit amet rutrum at, sagittis sed est. Donec suscipit leo at ipsum lacinia, id varius magna viverra. Nullam orci libero, mollis ut tellus at, vulputate dictum augue. Maecenas vitae auctor odio. Donec nisi erat, semper et leo sed, sollicitudin volutpat metus. Aliquam egestas nibh nec magna aliquam, a sodales ex sodales. Vestibulum aliquet ante eget velit fringilla interdum. Maecenas rhoncus dui et varius luctus. Quisque vestibulum tempus felis. Vestibulum eu sodales urna. Curabitur feugiat dui sed augue condimentum congue. Ut dapibus lorem quis felis elementum, sit amet placerat libero malesuada. Donec purus velit, varius eget leo eu, congue efficitur quam. Integer convallis in libero nec luctus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Quisque euismod nulla at diam condimentum euismod.
+
+Proin quis sem viverra, sodales tellus cursus, dapibus nulla. Phasellus elit orci, posuere nec tellus nec, porta elementum lorem. Mauris id arcu nisi. Duis quis ullamcorper arcu, laoreet ullamcorper nisi. Cras faucibus in nisl sit amet facilisis. Nunc tortor mauris, congue sit amet imperdiet at, fermentum id sem. Phasellus vel feugiat nibh, nec condimentum lorem. Donec vulputate tortor sem, id dapibus mauris dictum accumsan. Quisque condimentum, quam et euismod pretium, odio velit sagittis nulla, a pretium leo sapien sit amet odio. Fusce semper urna non consequat semper. Aenean placerat tellus malesuada, mattis diam vel, tempus diam. Vestibulum tristique nisi nec tellus elementum congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Proin scelerisque lorem eget facilisis tincidunt.
+
+Donec mattis pretium sapien, vel laoreet libero bibendum eu. Duis neque nisl, rutrum eget condimentum id, malesuada sed velit. Cras volutpat molestie quam, a aliquet neque blandit accumsan. Vestibulum semper metus vitae lacus suscipit, ut maximus urna cursus. Aliquam non libero nulla. Etiam tincidunt viverra velit vitae pulvinar. Morbi finibus est non neque ultrices rutrum. Mauris ut velit eu mi dapibus dictum nec varius nunc. Maecenas lobortis malesuada massa, at vulputate tortor interdum eu. Morbi sodales nulla in elit porttitor porttitor. Phasellus sit amet ultrices tortor. Nullam nisi tortor, accumsan at blandit eu, molestie eu enim. Nullam non porta justo, at varius odio. Suspendisse vitae erat urna. Mauris ornare posuere augue sit amet finibus. Praesent fringilla dui et erat vehicula maximus.
+
+Fusce orci mauris, lobortis nec aliquam et, egestas quis dolor. Aliquam viverra pretium neque, vitae rutrum risus accumsan sed. Praesent venenatis elementum ultrices. Curabitur sit amet semper velit, vitae eleifend nibh. Aenean mauris arcu, congue at mollis quis, tempor tempor sapien. Proin placerat metus purus, ac dictum felis euismod sed. Aenean ullamcorper mauris nec tincidunt sollicitudin. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+
+Nullam nisi sapien, mollis commodo dui ut, aliquam tristique ligula. Morbi tempus maximus mollis. In vehicula tempor ex, a placerat est pharetra et. Nullam ut est sit amet mauris euismod commodo. Morbi elementum iaculis arcu. Vestibulum fermentum, enim a tincidunt rutrum, enim ex pellentesque orci, eget mollis urna sapien nec massa. Donec tempus eros sed ex vestibulum, sit amet faucibus ligula vestibulum. Duis a est diam. Fusce euismod, eros et elementum euismod, diam neque maximus tortor, at convallis arcu lorem ac leo. Maecenas erat lorem, vestibulum eget massa posuere, mattis ullamcorper tellus. Nunc et elit vitae tortor molestie volutpat. </stringProp>
+                <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+                <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+                <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+                <stringProp name="URL"></stringProp>
+                <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+              </kg.apc.jmeter.samplers.DummySampler>
+              <hashTree/>
+            </hashTree>
+            <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C05-Order Product ${Product}" enabled="true">
+              <boolProp name="TransactionController.includeTimers">false</boolProp>
+              <boolProp name="TransactionController.parent">true</boolProp>
+            </TransactionController>
+            <hashTree>
+              <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C05-Order Product ${Product} ${__P(location, Poland)}" enabled="true">
+                <boolProp name="WAITING">true</boolProp>
+                <boolProp name="SUCCESFULL">true</boolProp>
+                <stringProp name="RESPONSE_CODE">200</stringProp>
+                <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+                <stringProp name="REQUEST_DATA"></stringProp>
+                <stringProp name="RESPONSE_DATA">
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eget sagittis diam. Curabitur ultricies blandit orci. Donec tristique eleifend pellentesque. Vestibulum a quam nunc. Nunc aliquam lacus a justo ultricies, in sodales sapien tincidunt. Aliquam varius turpis id nisi aliquet, vitae tincidunt nisi volutpat. Praesent sollicitudin lorem quis lectus tincidunt tincidunt.
+
+Pellentesque viverra dolor tincidunt arcu sollicitudin finibus. Donec non elit sit amet velit varius lobortis. Quisque facilisis sagittis neque, et efficitur elit sollicitudin sit amet. In vitae augue at sem sodales mollis eu a diam. Ut risus mi, ullamcorper hendrerit pharetra a, euismod et eros. Aliquam vel erat hendrerit, scelerisque tortor sed, pretium ex. Quisque dolor sapien, imperdiet quis vestibulum a, ultrices et elit. Praesent varius ligula sit amet orci eleifend, vitae vehicula eros interdum. Donec vel suscipit ligula. Curabitur blandit purus non dapibus vestibulum. Vivamus aliquam purus vitae justo mollis finibus. Maecenas suscipit commodo consectetur. Ut sit amet fermentum leo. Vivamus at elit varius, elementum mauris id, feugiat diam.
+
+Cras lacinia mauris eget erat semper, in dapibus velit finibus. Duis finibus quam quam, vel rutrum urna ultrices et. Morbi ornare scelerisque tincidunt. Nulla quis nibh urna. Nullam sodales fermentum urna, sed consequat velit pretium mattis. Vestibulum elementum enim euismod lacus gravida, at hendrerit metus lacinia. Maecenas varius a ante non porttitor. Sed enim quam, convallis pellentesque egestas vel, ullamcorper vel neque.
+
+Proin cursus efficitur placerat. Morbi lacinia felis eu magna suscipit rutrum. Mauris ex risus, dignissim at luctus et, pellentesque non erat. Integer sit amet urna tortor. Nunc et condimentum massa, vel fermentum nunc. Ut euismod mi ante, euismod commodo elit sodales in. Nunc fringilla vulputate turpis, id dictum quam scelerisque eu.
+
+Sed eu nunc non nisi mollis tempor a eget est. Nullam tellus arcu, facilisis sed aliquet eu, facilisis eget urna. Fusce lacus felis, iaculis vel pharetra sit amet, semper eget purus. Pellentesque nulla ipsum, tempus sit amet arcu ac, vestibulum venenatis enim. Nam ac varius velit. Vivamus tincidunt metus augue. Nunc congue ex augue, id vestibulum sem hendrerit eu. Fusce rutrum dui eu purus porta vulputate. Duis facilisis odio et pellentesque sollicitudin. Etiam mattis libero non nunc fringilla, ac auctor sapien tincidunt. Etiam nulla elit, vulputate vitae magna a, finibus tempus orci. Maecenas ac enim dictum, scelerisque justo vitae, hendrerit diam. Quisque suscipit lorem ipsum, et placerat mi sollicitudin convallis.
+
+Maecenas a diam sit amet lacus commodo varius. Maecenas consectetur arcu a neque venenatis luctus. Suspendisse vitae interdum augue. Pellentesque tempus tellus vel ante bibendum, quis sagittis nisl rhoncus. Sed consectetur lacinia sapien ac interdum. Mauris pulvinar, est ac rutrum semper, ex sapien aliquam eros, a volutpat sem dolor non dui. Mauris sem nisi, luctus non consectetur ac, bibendum id mauris. Nunc dictum convallis cursus. Nullam a consequat nisl. Donec nec metus elementum, iaculis enim et, porttitor nibh. Suspendisse porta nibh ipsum, vitae vulputate quam fringilla sit amet. Quisque hendrerit velit dolor, et gravida augue pellentesque non. Cras egestas posuere malesuada. Nam eleifend lectus vitae justo congue, sed venenatis nisi tempor. Cras consequat, nisi sit amet auctor pharetra, sapien augue euismod augue, non lobortis nibh ex et nulla.
+
+Donec ultrices purus dui, ac tristique justo iaculis vitae. Donec ac elit vel nunc hendrerit mollis. Mauris mattis ligula fringilla quam pulvinar, sit amet finibus lacus elementum. Integer non diam non ante tincidunt facilisis ut quis nibh. Nam pulvinar fringilla felis. Nunc vel velit cursus, commodo quam nec, finibus nisi. Aliquam eget faucibus urna. Praesent malesuada eros vel tellus blandit, sed varius nulla luctus. Donec vel porta arcu. Nulla nunc libero, laoreet ornare fringilla sit amet, consectetur at sapien. Maecenas ultrices finibus sodales.
+
+Cras eget turpis vel nibh eleifend consequat at pretium leo. In mattis fermentum dapibus. Curabitur ac mauris leo. Aenean et mollis enim, eu feugiat metus. Nulla facilisi. Maecenas eleifend faucibus turpis a sagittis. Sed vitae egestas elit. Fusce congue quis nisl sit amet tincidunt. Quisque at semper felis, at congue leo.
+
+Mauris vestibulum felis magna, et iaculis ligula cursus in. Donec porta, magna eget viverra interdum, nisl ligula pretium diam, sit amet pellentesque purus eros nec nibh. Nam at justo leo. Proin imperdiet lorem a consectetur ultricies. Donec diam lorem, molestie non dignissim id, pretium id arcu. Phasellus sed gravida leo. Duis consectetur dui purus, eget congue ipsum mollis sed. Sed sed sem sit amet massa posuere porta. Aenean quis bibendum lorem. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean iaculis ornare nibh in blandit.
+
+Aenean sit amet quam feugiat, tincidunt massa posuere, dignissim enim. Donec tristique justo vel diam tempor, vitae dictum nunc molestie. Aenean egestas porttitor dui non consequat. Nam sed turpis fringilla, interdum velit eu, tempor orci. Etiam tincidunt fringilla augue, sit amet euismod mi congue quis. Nam semper posuere quam, ut tristique risus sollicitudin a. Quisque eu molestie metus, luctus maximus orci.
+
+Donec facilisis justo a consequat sodales. Mauris non justo in nisl commodo suscipit rutrum in erat. Nunc ultrices ultricies urna sed hendrerit. Vestibulum tincidunt dignissim magna, vitae bibendum leo ultricies ac. Vivamus ullamcorper rutrum nunc ac consectetur. Etiam at justo ac erat convallis vulputate. Donec vel vestibulum turpis. Vivamus et odio commodo, porta mauris non, porttitor ante. Ut mattis auctor purus, vel tincidunt dui blandit a. Nulla sollicitudin leo sit amet arcu accumsan, sed rutrum nisl auctor. Vivamus blandit urna ac cursus rutrum. Pellentesque in fermentum purus.
+
+Cras augue dui, sodales eget pulvinar ac, maximus id elit. Integer pulvinar urna erat, non placerat leo volutpat ut. Proin sit amet suscipit sapien. Praesent nec vulputate justo. Cras ac maximus dolor. Mauris imperdiet urna nec viverra porttitor. Integer venenatis dolor vitae ante dignissim tempor. Nullam auctor lorem enim, sit amet malesuada tellus iaculis et. Nam rhoncus facilisis suscipit. Suspendisse potenti. Vivamus at eleifend mi. Duis viverra lacus dui, nec condimentum risus imperdiet ac. Fusce ex eros, dapibus ac purus a, aliquet iaculis purus. Sed pellentesque purus ullamcorper facilisis aliquet.
+
+Mauris ultricies orci imperdiet sem rhoncus, a molestie ex pulvinar. Vestibulum quis metus augue. Proin ac nunc porttitor, hendrerit erat vitae, viverra odio. Maecenas purus mi, accumsan at nisi luctus, tristique interdum ligula. Curabitur orci lorem, dignissim et dui non, faucibus tempor quam. Praesent eros mauris, dignissim eu augue in, cursus scelerisque nisl. Pellentesque eu ligula nisl.
+
+Mauris pretium blandit lacus sed suscipit. Praesent non aliquam est, eget porta sem. Aliquam ac aliquam sapien, eget consectetur neque. Donec pharetra gravida dui, et sollicitudin odio molestie eget. Nam ac ornare nisl, ac feugiat quam. Nulla efficitur massa non sapien ornare malesuada. Nunc molestie hendrerit feugiat. Integer quis erat lobortis, facilisis ante in, pulvinar nisl. Nullam ipsum erat, mollis et odio sit amet, finibus dignissim purus. Mauris consectetur ornare porta.
+
+Morbi volutpat interdum auctor. Integer viverra egestas erat, tincidunt tristique nibh elementum vel. Fusce bibendum ac lacus quis mattis. Quisque at vestibulum est, a dignissim leo. Quisque lacinia risus eu iaculis vestibulum. Aliquam fermentum scelerisque ultrices. Aliquam erat volutpat. Vivamus at ex odio. Duis consectetur ipsum sit amet tellus feugiat, faucibus maximus neque volutpat. Ut congue diam id enim euismod interdum.
+
+Praesent gravida orci a diam faucibus porttitor. Integer bibendum, urna at mollis consequat, sem neque bibendum tellus, at efficitur tortor ex et sapien. Quisque dapibus tortor in sapien ornare viverra non at orci. Morbi pretium, arcu a mollis dictum, nulla urna hendrerit arcu, ut finibus arcu nisl ut sem. Nunc hendrerit mauris enim. Aenean fermentum ut tellus ac varius. Praesent in commodo orci. Fusce eget posuere ligula, et elementum ante.
+
+Nam eget molestie ex, ac varius ipsum. Nulla eleifend lacinia volutpat. Vestibulum non nisl eget enim luctus feugiat quis sit amet lorem. Donec sed purus scelerisque, rhoncus metus mollis, efficitur nunc. Proin velit sapien, congue ullamcorper mi sed, luctus porta turpis. Vestibulum semper finibus feugiat. Maecenas convallis lectus quis erat efficitur, id volutpat justo dapibus. Praesent aliquam leo eu sapien vulputate, vel lacinia tortor tempus. Fusce sodales aliquam sollicitudin. Pellentesque cursus vulputate mauris, quis vestibulum quam malesuada vel. Nulla leo magna, pretium quis magna in, posuere dignissim lectus.
+
+Sed accumsan lectus ut sollicitudin consequat. Aliquam cursus orci eu purus vulputate sagittis. Suspendisse aliquet turpis et varius commodo. Ut tincidunt sapien quis purus scelerisque, eget congue urna tristique. Sed sit amet volutpat sapien, non faucibus lectus. Fusce laoreet congue rutrum. Nulla dapibus felis sit amet fringilla pretium. Donec in efficitur libero. Mauris eget tellus arcu. Mauris commodo lobortis turpis, vel vehicula tellus pellentesque a. Pellentesque nec quam vulputate nisl lacinia volutpat.
+
+Mauris viverra, neque sit amet tempor mollis, lectus sapien dignissim ligula, nec porta lectus dui ut quam. Integer a efficitur lacus, nec egestas elit. Nunc ante tortor, porttitor a hendrerit in, pharetra sit amet ipsum. Duis ut malesuada quam, ornare rutrum lorem. Duis nec ligula id ipsum pharetra consequat. Phasellus mattis, odio eget efficitur bibendum, mi elit malesuada diam, in pulvinar leo diam vitae dolor. Nulla efficitur ex et ante tempus condimentum.
+
+Morbi lectus risus, venenatis sit amet rutrum at, sagittis sed est. Donec suscipit leo at ipsum lacinia, id varius magna viverra. Nullam orci libero, mollis ut tellus at, vulputate dictum augue. Maecenas vitae auctor odio. Donec nisi erat, semper et leo sed, sollicitudin volutpat metus. Aliquam egestas nibh nec magna aliquam, a sodales ex sodales. Vestibulum aliquet ante eget velit fringilla interdum. Maecenas rhoncus dui et varius luctus. Quisque vestibulum tempus felis. Vestibulum eu sodales urna. Curabitur feugiat dui sed augue condimentum congue. Ut dapibus lorem quis felis elementum, sit amet placerat libero malesuada. Donec purus velit, varius eget leo eu, congue efficitur quam. Integer convallis in libero nec luctus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Quisque euismod nulla at diam condimentum euismod.
+
+Proin quis sem viverra, sodales tellus cursus, dapibus nulla. Phasellus elit orci, posuere nec tellus nec, porta elementum lorem. Mauris id arcu nisi. Duis quis ullamcorper arcu, laoreet ullamcorper nisi. Cras faucibus in nisl sit amet facilisis. Nunc tortor mauris, congue sit amet imperdiet at, fermentum id sem. Phasellus vel feugiat nibh, nec condimentum lorem. Donec vulputate tortor sem, id dapibus mauris dictum accumsan. Quisque condimentum, quam et euismod pretium, odio velit sagittis nulla, a pretium leo sapien sit amet odio. Fusce semper urna non consequat semper. Aenean placerat tellus malesuada, mattis diam vel, tempus diam. Vestibulum tristique nisi nec tellus elementum congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Proin scelerisque lorem eget facilisis tincidunt.
+
+Donec mattis pretium sapien, vel laoreet libero bibendum eu. Duis neque nisl, rutrum eget condimentum id, malesuada sed velit. Cras volutpat molestie quam, a aliquet neque blandit accumsan. Vestibulum semper metus vitae lacus suscipit, ut maximus urna cursus. Aliquam non libero nulla. Etiam tincidunt viverra velit vitae pulvinar. Morbi finibus est non neque ultrices rutrum. Mauris ut velit eu mi dapibus dictum nec varius nunc. Maecenas lobortis malesuada massa, at vulputate tortor interdum eu. Morbi sodales nulla in elit porttitor porttitor. Phasellus sit amet ultrices tortor. Nullam nisi tortor, accumsan at blandit eu, molestie eu enim. Nullam non porta justo, at varius odio. Suspendisse vitae erat urna. Mauris ornare posuere augue sit amet finibus. Praesent fringilla dui et erat vehicula maximus.
+
+Fusce orci mauris, lobortis nec aliquam et, egestas quis dolor. Aliquam viverra pretium neque, vitae rutrum risus accumsan sed. Praesent venenatis elementum ultrices. Curabitur sit amet semper velit, vitae eleifend nibh. Aenean mauris arcu, congue at mollis quis, tempor tempor sapien. Proin placerat metus purus, ac dictum felis euismod sed. Aenean ullamcorper mauris nec tincidunt sollicitudin. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+
+Nullam nisi sapien, mollis commodo dui ut, aliquam tristique ligula. Morbi tempus maximus mollis. In vehicula tempor ex, a placerat est pharetra et. Nullam ut est sit amet mauris euismod commodo. Morbi elementum iaculis arcu. Vestibulum fermentum, enim a tincidunt rutrum, enim ex pellentesque orci, eget mollis urna sapien nec massa. Donec tempus eros sed ex vestibulum, sit amet faucibus ligula vestibulum. Duis a est diam. Fusce euismod, eros et elementum euismod, diam neque maximus tortor, at convallis arcu lorem ac leo. Maecenas erat lorem, vestibulum eget massa posuere, mattis ullamcorper tellus. Nunc et elit vitae tortor molestie volutpat. </stringProp>
+                <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+                <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+                <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+                <stringProp name="URL"></stringProp>
+                <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+              </kg.apc.jmeter.samplers.DummySampler>
+              <hashTree/>
+            </hashTree>
+            <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C00-Error Selecting Product" enabled="true">
+              <boolProp name="TransactionController.includeTimers">false</boolProp>
+              <boolProp name="TransactionController.parent">true</boolProp>
+            </TransactionController>
+            <hashTree>
+              <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C00-Error Selecting Product ${__P(location, Poland)}" enabled="true">
+                <boolProp name="WAITING">true</boolProp>
+                <boolProp name="SUCCESFULL">false</boolProp>
+                <stringProp name="RESPONSE_CODE">500</stringProp>
+                <stringProp name="RESPONSE_MESSAGE">Internal Server Error</stringProp>
+                <stringProp name="REQUEST_DATA"></stringProp>
+                <stringProp name="RESPONSE_DATA">
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eget sagittis diam. Curabitur ultricies blandit orci. Donec tristique eleifend pellentesque. Vestibulum a quam nunc. Nunc aliquam lacus a justo ultricies, in sodales sapien tincidunt. Aliquam varius turpis id nisi aliquet, vitae tincidunt nisi volutpat. Praesent sollicitudin lorem quis lectus tincidunt tincidunt.
+
+Pellentesque viverra dolor tincidunt arcu sollicitudin finibus. Donec non elit sit amet velit varius lobortis. Quisque facilisis sagittis neque, et efficitur elit sollicitudin sit amet. In vitae augue at sem sodales mollis eu a diam. Ut risus mi, ullamcorper hendrerit pharetra a, euismod et eros. Aliquam vel erat hendrerit, scelerisque tortor sed, pretium ex. Quisque dolor sapien, imperdiet quis vestibulum a, ultrices et elit. Praesent varius ligula sit amet orci eleifend, vitae vehicula eros interdum. Donec vel suscipit ligula. Curabitur blandit purus non dapibus vestibulum. Vivamus aliquam purus vitae justo mollis finibus. Maecenas suscipit commodo consectetur. Ut sit amet fermentum leo. Vivamus at elit varius, elementum mauris id, feugiat diam.
+
+Cras lacinia mauris eget erat semper, in dapibus velit finibus. Duis finibus quam quam, vel rutrum urna ultrices et. Morbi ornare scelerisque tincidunt. Nulla quis nibh urna. Nullam sodales fermentum urna, sed consequat velit pretium mattis. Vestibulum elementum enim euismod lacus gravida, at hendrerit metus lacinia. Maecenas varius a ante non porttitor. Sed enim quam, convallis pellentesque egestas vel, ullamcorper vel neque.
+
+Proin cursus efficitur placerat. Morbi lacinia felis eu magna suscipit rutrum. Mauris ex risus, dignissim at luctus et, pellentesque non erat. Integer sit amet urna tortor. Nunc et condimentum massa, vel fermentum nunc. Ut euismod mi ante, euismod commodo elit sodales in. Nunc fringilla vulputate turpis, id dictum quam scelerisque eu.
+
+Sed eu nunc non nisi mollis tempor a eget est. Nullam tellus arcu, facilisis sed aliquet eu, facilisis eget urna. Fusce lacus felis, iaculis vel pharetra sit amet, semper eget purus. Pellentesque nulla ipsum, tempus sit amet arcu ac, vestibulum venenatis enim. Nam ac varius velit. Vivamus tincidunt metus augue. Nunc congue ex augue, id vestibulum sem hendrerit eu. Fusce rutrum dui eu purus porta vulputate. Duis facilisis odio et pellentesque sollicitudin. Etiam mattis libero non nunc fringilla, ac auctor sapien tincidunt. Etiam nulla elit, vulputate vitae magna a, finibus tempus orci. Maecenas ac enim dictum, scelerisque justo vitae, hendrerit diam. Quisque suscipit lorem ipsum, et placerat mi sollicitudin convallis.
+
+Maecenas a diam sit amet lacus commodo varius. Maecenas consectetur arcu a neque venenatis luctus. Suspendisse vitae interdum augue. Pellentesque tempus tellus vel ante bibendum, quis sagittis nisl rhoncus. Sed consectetur lacinia sapien ac interdum. Mauris pulvinar, est ac rutrum semper, ex sapien aliquam eros, a volutpat sem dolor non dui. Mauris sem nisi, luctus non consectetur ac, bibendum id mauris. Nunc dictum convallis cursus. Nullam a consequat nisl. Donec nec metus elementum, iaculis enim et, porttitor nibh. Suspendisse porta nibh ipsum, vitae vulputate quam fringilla sit amet. Quisque hendrerit velit dolor, et gravida augue pellentesque non. Cras egestas posuere malesuada. Nam eleifend lectus vitae justo congue, sed venenatis nisi tempor. Cras consequat, nisi sit amet auctor pharetra, sapien augue euismod augue, non lobortis nibh ex et nulla.
+
+Donec ultrices purus dui, ac tristique justo iaculis vitae. Donec ac elit vel nunc hendrerit mollis. Mauris mattis ligula fringilla quam pulvinar, sit amet finibus lacus elementum. Integer non diam non ante tincidunt facilisis ut quis nibh. Nam pulvinar fringilla felis. Nunc vel velit cursus, commodo quam nec, finibus nisi. Aliquam eget faucibus urna. Praesent malesuada eros vel tellus blandit, sed varius nulla luctus. Donec vel porta arcu. Nulla nunc libero, laoreet ornare fringilla sit amet, consectetur at sapien. Maecenas ultrices finibus sodales.
+
+Cras eget turpis vel nibh eleifend consequat at pretium leo. In mattis fermentum dapibus. Curabitur ac mauris leo. Aenean et mollis enim, eu feugiat metus. Nulla facilisi. Maecenas eleifend faucibus turpis a sagittis. Sed vitae egestas elit. Fusce congue quis nisl sit amet tincidunt. Quisque at semper felis, at congue leo.
+
+Mauris vestibulum felis magna, et iaculis ligula cursus in. Donec porta, magna eget viverra interdum, nisl ligula pretium diam, sit amet pellentesque purus eros nec nibh. Nam at justo leo. Proin imperdiet lorem a consectetur ultricies. Donec diam lorem, molestie non dignissim id, pretium id arcu. Phasellus sed gravida leo. Duis consectetur dui purus, eget congue ipsum mollis sed. Sed sed sem sit amet massa posuere porta. Aenean quis bibendum lorem. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean iaculis ornare nibh in blandit.
+
+Aenean sit amet quam feugiat, tincidunt massa posuere, dignissim enim. Donec tristique justo vel diam tempor, vitae dictum nunc molestie. Aenean egestas porttitor dui non consequat. Nam sed turpis fringilla, interdum velit eu, tempor orci. Etiam tincidunt fringilla augue, sit amet euismod mi congue quis. Nam semper posuere quam, ut tristique risus sollicitudin a. Quisque eu molestie metus, luctus maximus orci.
+
+Donec facilisis justo a consequat sodales. Mauris non justo in nisl commodo suscipit rutrum in erat. Nunc ultrices ultricies urna sed hendrerit. Vestibulum tincidunt dignissim magna, vitae bibendum leo ultricies ac. Vivamus ullamcorper rutrum nunc ac consectetur. Etiam at justo ac erat convallis vulputate. Donec vel vestibulum turpis. Vivamus et odio commodo, porta mauris non, porttitor ante. Ut mattis auctor purus, vel tincidunt dui blandit a. Nulla sollicitudin leo sit amet arcu accumsan, sed rutrum nisl auctor. Vivamus blandit urna ac cursus rutrum. Pellentesque in fermentum purus.
+
+Cras augue dui, sodales eget pulvinar ac, maximus id elit. Integer pulvinar urna erat, non placerat leo volutpat ut. Proin sit amet suscipit sapien. Praesent nec vulputate justo. Cras ac maximus dolor. Mauris imperdiet urna nec viverra porttitor. Integer venenatis dolor vitae ante dignissim tempor. Nullam auctor lorem enim, sit amet malesuada tellus iaculis et. Nam rhoncus facilisis suscipit. Suspendisse potenti. Vivamus at eleifend mi. Duis viverra lacus dui, nec condimentum risus imperdiet ac. Fusce ex eros, dapibus ac purus a, aliquet iaculis purus. Sed pellentesque purus ullamcorper facilisis aliquet.
+
+Mauris ultricies orci imperdiet sem rhoncus, a molestie ex pulvinar. Vestibulum quis metus augue. Proin ac nunc porttitor, hendrerit erat vitae, viverra odio. Maecenas purus mi, accumsan at nisi luctus, tristique interdum ligula. Curabitur orci lorem, dignissim et dui non, faucibus tempor quam. Praesent eros mauris, dignissim eu augue in, cursus scelerisque nisl. Pellentesque eu ligula nisl.
+
+Mauris pretium blandit lacus sed suscipit. Praesent non aliquam est, eget porta sem. Aliquam ac aliquam sapien, eget consectetur neque. Donec pharetra gravida dui, et sollicitudin odio molestie eget. Nam ac ornare nisl, ac feugiat quam. Nulla efficitur massa non sapien ornare malesuada. Nunc molestie hendrerit feugiat. Integer quis erat lobortis, facilisis ante in, pulvinar nisl. Nullam ipsum erat, mollis et odio sit amet, finibus dignissim purus. Mauris consectetur ornare porta.
+
+Morbi volutpat interdum auctor. Integer viverra egestas erat, tincidunt tristique nibh elementum vel. Fusce bibendum ac lacus quis mattis. Quisque at vestibulum est, a dignissim leo. Quisque lacinia risus eu iaculis vestibulum. Aliquam fermentum scelerisque ultrices. Aliquam erat volutpat. Vivamus at ex odio. Duis consectetur ipsum sit amet tellus feugiat, faucibus maximus neque volutpat. Ut congue diam id enim euismod interdum.
+
+Praesent gravida orci a diam faucibus porttitor. Integer bibendum, urna at mollis consequat, sem neque bibendum tellus, at efficitur tortor ex et sapien. Quisque dapibus tortor in sapien ornare viverra non at orci. Morbi pretium, arcu a mollis dictum, nulla urna hendrerit arcu, ut finibus arcu nisl ut sem. Nunc hendrerit mauris enim. Aenean fermentum ut tellus ac varius. Praesent in commodo orci. Fusce eget posuere ligula, et elementum ante.
+
+Nam eget molestie ex, ac varius ipsum. Nulla eleifend lacinia volutpat. Vestibulum non nisl eget enim luctus feugiat quis sit amet lorem. Donec sed purus scelerisque, rhoncus metus mollis, efficitur nunc. Proin velit sapien, congue ullamcorper mi sed, luctus porta turpis. Vestibulum semper finibus feugiat. Maecenas convallis lectus quis erat efficitur, id volutpat justo dapibus. Praesent aliquam leo eu sapien vulputate, vel lacinia tortor tempus. Fusce sodales aliquam sollicitudin. Pellentesque cursus vulputate mauris, quis vestibulum quam malesuada vel. Nulla leo magna, pretium quis magna in, posuere dignissim lectus.
+
+Sed accumsan lectus ut sollicitudin consequat. Aliquam cursus orci eu purus vulputate sagittis. Suspendisse aliquet turpis et varius commodo. Ut tincidunt sapien quis purus scelerisque, eget congue urna tristique. Sed sit amet volutpat sapien, non faucibus lectus. Fusce laoreet congue rutrum. Nulla dapibus felis sit amet fringilla pretium. Donec in efficitur libero. Mauris eget tellus arcu. Mauris commodo lobortis turpis, vel vehicula tellus pellentesque a. Pellentesque nec quam vulputate nisl lacinia volutpat.
+
+Mauris viverra, neque sit amet tempor mollis, lectus sapien dignissim ligula, nec porta lectus dui ut quam. Integer a efficitur lacus, nec egestas elit. Nunc ante tortor, porttitor a hendrerit in, pharetra sit amet ipsum. Duis ut malesuada quam, ornare rutrum lorem. Duis nec ligula id ipsum pharetra consequat. Phasellus mattis, odio eget efficitur bibendum, mi elit malesuada diam, in pulvinar leo diam vitae dolor. Nulla efficitur ex et ante tempus condimentum.
+
+Morbi lectus risus, venenatis sit amet rutrum at, sagittis sed est. Donec suscipit leo at ipsum lacinia, id varius magna viverra. Nullam orci libero, mollis ut tellus at, vulputate dictum augue. Maecenas vitae auctor odio. Donec nisi erat, semper et leo sed, sollicitudin volutpat metus. Aliquam egestas nibh nec magna aliquam, a sodales ex sodales. Vestibulum aliquet ante eget velit fringilla interdum. Maecenas rhoncus dui et varius luctus. Quisque vestibulum tempus felis. Vestibulum eu sodales urna. Curabitur feugiat dui sed augue condimentum congue. Ut dapibus lorem quis felis elementum, sit amet placerat libero malesuada. Donec purus velit, varius eget leo eu, congue efficitur quam. Integer convallis in libero nec luctus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Quisque euismod nulla at diam condimentum euismod.
+
+Proin quis sem viverra, sodales tellus cursus, dapibus nulla. Phasellus elit orci, posuere nec tellus nec, porta elementum lorem. Mauris id arcu nisi. Duis quis ullamcorper arcu, laoreet ullamcorper nisi. Cras faucibus in nisl sit amet facilisis. Nunc tortor mauris, congue sit amet imperdiet at, fermentum id sem. Phasellus vel feugiat nibh, nec condimentum lorem. Donec vulputate tortor sem, id dapibus mauris dictum accumsan. Quisque condimentum, quam et euismod pretium, odio velit sagittis nulla, a pretium leo sapien sit amet odio. Fusce semper urna non consequat semper. Aenean placerat tellus malesuada, mattis diam vel, tempus diam. Vestibulum tristique nisi nec tellus elementum congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Proin scelerisque lorem eget facilisis tincidunt.
+
+Donec mattis pretium sapien, vel laoreet libero bibendum eu. Duis neque nisl, rutrum eget condimentum id, malesuada sed velit. Cras volutpat molestie quam, a aliquet neque blandit accumsan. Vestibulum semper metus vitae lacus suscipit, ut maximus urna cursus. Aliquam non libero nulla. Etiam tincidunt viverra velit vitae pulvinar. Morbi finibus est non neque ultrices rutrum. Mauris ut velit eu mi dapibus dictum nec varius nunc. Maecenas lobortis malesuada massa, at vulputate tortor interdum eu. Morbi sodales nulla in elit porttitor porttitor. Phasellus sit amet ultrices tortor. Nullam nisi tortor, accumsan at blandit eu, molestie eu enim. Nullam non porta justo, at varius odio. Suspendisse vitae erat urna. Mauris ornare posuere augue sit amet finibus. Praesent fringilla dui et erat vehicula maximus.
+
+Fusce orci mauris, lobortis nec aliquam et, egestas quis dolor. Aliquam viverra pretium neque, vitae rutrum risus accumsan sed. Praesent venenatis elementum ultrices. Curabitur sit amet semper velit, vitae eleifend nibh. Aenean mauris arcu, congue at mollis quis, tempor tempor sapien. Proin placerat metus purus, ac dictum felis euismod sed. Aenean ullamcorper mauris nec tincidunt sollicitudin. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+
+Nullam nisi sapien, mollis commodo dui ut, aliquam tristique ligula. Morbi tempus maximus mollis. In vehicula tempor ex, a placerat est pharetra et. Nullam ut est sit amet mauris euismod commodo. Morbi elementum iaculis arcu. Vestibulum fermentum, enim a tincidunt rutrum, enim ex pellentesque orci, eget mollis urna sapien nec massa. Donec tempus eros sed ex vestibulum, sit amet faucibus ligula vestibulum. Duis a est diam. Fusce euismod, eros et elementum euismod, diam neque maximus tortor, at convallis arcu lorem ac leo. Maecenas erat lorem, vestibulum eget massa posuere, mattis ullamcorper tellus. Nunc et elit vitae tortor molestie volutpat. </stringProp>
+                <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+                <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+                <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+                <stringProp name="URL"></stringProp>
+                <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+              </kg.apc.jmeter.samplers.DummySampler>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
+        </hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C06-Open Cart" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">true</boolProp>
+        </TransactionController>
+        <hashTree>
+          <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C06-Open Cart ${__P(location, Poland)}" enabled="true">
+            <boolProp name="WAITING">true</boolProp>
+            <boolProp name="SUCCESFULL">true</boolProp>
+            <stringProp name="RESPONSE_CODE">200</stringProp>
+            <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+            <stringProp name="REQUEST_DATA"></stringProp>
+            <stringProp name="RESPONSE_DATA">
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eget sagittis diam. Curabitur ultricies blandit orci. Donec tristique eleifend pellentesque. Vestibulum a quam nunc. Nunc aliquam lacus a justo ultricies, in sodales sapien tincidunt. Aliquam varius turpis id nisi aliquet, vitae tincidunt nisi volutpat. Praesent sollicitudin lorem quis lectus tincidunt tincidunt.
+
+Pellentesque viverra dolor tincidunt arcu sollicitudin finibus. Donec non elit sit amet velit varius lobortis. Quisque facilisis sagittis neque, et efficitur elit sollicitudin sit amet. In vitae augue at sem sodales mollis eu a diam. Ut risus mi, ullamcorper hendrerit pharetra a, euismod et eros. Aliquam vel erat hendrerit, scelerisque tortor sed, pretium ex. Quisque dolor sapien, imperdiet quis vestibulum a, ultrices et elit. Praesent varius ligula sit amet orci eleifend, vitae vehicula eros interdum. Donec vel suscipit ligula. Curabitur blandit purus non dapibus vestibulum. Vivamus aliquam purus vitae justo mollis finibus. Maecenas suscipit commodo consectetur. Ut sit amet fermentum leo. Vivamus at elit varius, elementum mauris id, feugiat diam.
+
+Cras lacinia mauris eget erat semper, in dapibus velit finibus. Duis finibus quam quam, vel rutrum urna ultrices et. Morbi ornare scelerisque tincidunt. Nulla quis nibh urna. Nullam sodales fermentum urna, sed consequat velit pretium mattis. Vestibulum elementum enim euismod lacus gravida, at hendrerit metus lacinia. Maecenas varius a ante non porttitor. Sed enim quam, convallis pellentesque egestas vel, ullamcorper vel neque.
+
+Proin cursus efficitur placerat. Morbi lacinia felis eu magna suscipit rutrum. Mauris ex risus, dignissim at luctus et, pellentesque non erat. Integer sit amet urna tortor. Nunc et condimentum massa, vel fermentum nunc. Ut euismod mi ante, euismod commodo elit sodales in. Nunc fringilla vulputate turpis, id dictum quam scelerisque eu.
+
+Sed eu nunc non nisi mollis tempor a eget est. Nullam tellus arcu, facilisis sed aliquet eu, facilisis eget urna. Fusce lacus felis, iaculis vel pharetra sit amet, semper eget purus. Pellentesque nulla ipsum, tempus sit amet arcu ac, vestibulum venenatis enim. Nam ac varius velit. Vivamus tincidunt metus augue. Nunc congue ex augue, id vestibulum sem hendrerit eu. Fusce rutrum dui eu purus porta vulputate. Duis facilisis odio et pellentesque sollicitudin. Etiam mattis libero non nunc fringilla, ac auctor sapien tincidunt. Etiam nulla elit, vulputate vitae magna a, finibus tempus orci. Maecenas ac enim dictum, scelerisque justo vitae, hendrerit diam. Quisque suscipit lorem ipsum, et placerat mi sollicitudin convallis.
+
+Maecenas a diam sit amet lacus commodo varius. Maecenas consectetur arcu a neque venenatis luctus. Suspendisse vitae interdum augue. Pellentesque tempus tellus vel ante bibendum, quis sagittis nisl rhoncus. Sed consectetur lacinia sapien ac interdum. Mauris pulvinar, est ac rutrum semper, ex sapien aliquam eros, a volutpat sem dolor non dui. Mauris sem nisi, luctus non consectetur ac, bibendum id mauris. Nunc dictum convallis cursus. Nullam a consequat nisl. Donec nec metus elementum, iaculis enim et, porttitor nibh. Suspendisse porta nibh ipsum, vitae vulputate quam fringilla sit amet. Quisque hendrerit velit dolor, et gravida augue pellentesque non. Cras egestas posuere malesuada. Nam eleifend lectus vitae justo congue, sed venenatis nisi tempor. Cras consequat, nisi sit amet auctor pharetra, sapien augue euismod augue, non lobortis nibh ex et nulla.
+
+Donec ultrices purus dui, ac tristique justo iaculis vitae. Donec ac elit vel nunc hendrerit mollis. Mauris mattis ligula fringilla quam pulvinar, sit amet finibus lacus elementum. Integer non diam non ante tincidunt facilisis ut quis nibh. Nam pulvinar fringilla felis. Nunc vel velit cursus, commodo quam nec, finibus nisi. Aliquam eget faucibus urna. Praesent malesuada eros vel tellus blandit, sed varius nulla luctus. Donec vel porta arcu. Nulla nunc libero, laoreet ornare fringilla sit amet, consectetur at sapien. Maecenas ultrices finibus sodales.
+
+Cras eget turpis vel nibh eleifend consequat at pretium leo. In mattis fermentum dapibus. Curabitur ac mauris leo. Aenean et mollis enim, eu feugiat metus. Nulla facilisi. Maecenas eleifend faucibus turpis a sagittis. Sed vitae egestas elit. Fusce congue quis nisl sit amet tincidunt. Quisque at semper felis, at congue leo.
+
+Mauris vestibulum felis magna, et iaculis ligula cursus in. Donec porta, magna eget viverra interdum, nisl ligula pretium diam, sit amet pellentesque purus eros nec nibh. Nam at justo leo. Proin imperdiet lorem a consectetur ultricies. Donec diam lorem, molestie non dignissim id, pretium id arcu. Phasellus sed gravida leo. Duis consectetur dui purus, eget congue ipsum mollis sed. Sed sed sem sit amet massa posuere porta. Aenean quis bibendum lorem. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean iaculis ornare nibh in blandit.
+
+Aenean sit amet quam feugiat, tincidunt massa posuere, dignissim enim. Donec tristique justo vel diam tempor, vitae dictum nunc molestie. Aenean egestas porttitor dui non consequat. Nam sed turpis fringilla, interdum velit eu, tempor orci. Etiam tincidunt fringilla augue, sit amet euismod mi congue quis. Nam semper posuere quam, ut tristique risus sollicitudin a. Quisque eu molestie metus, luctus maximus orci.
+
+Donec facilisis justo a consequat sodales. Mauris non justo in nisl commodo suscipit rutrum in erat. Nunc ultrices ultricies urna sed hendrerit. Vestibulum tincidunt dignissim magna, vitae bibendum leo ultricies ac. Vivamus ullamcorper rutrum nunc ac consectetur. Etiam at justo ac erat convallis vulputate. Donec vel vestibulum turpis. Vivamus et odio commodo, porta mauris non, porttitor ante. Ut mattis auctor purus, vel tincidunt dui blandit a. Nulla sollicitudin leo sit amet arcu accumsan, sed rutrum nisl auctor. Vivamus blandit urna ac cursus rutrum. Pellentesque in fermentum purus.
+
+Cras augue dui, sodales eget pulvinar ac, maximus id elit. Integer pulvinar urna erat, non placerat leo volutpat ut. Proin sit amet suscipit sapien. Praesent nec vulputate justo. Cras ac maximus dolor. Mauris imperdiet urna nec viverra porttitor. Integer venenatis dolor vitae ante dignissim tempor. Nullam auctor lorem enim, sit amet malesuada tellus iaculis et. Nam rhoncus facilisis suscipit. Suspendisse potenti. Vivamus at eleifend mi. Duis viverra lacus dui, nec condimentum risus imperdiet ac. Fusce ex eros, dapibus ac purus a, aliquet iaculis purus. Sed pellentesque purus ullamcorper facilisis aliquet.
+
+Mauris ultricies orci imperdiet sem rhoncus, a molestie ex pulvinar. Vestibulum quis metus augue. Proin ac nunc porttitor, hendrerit erat vitae, viverra odio. Maecenas purus mi, accumsan at nisi luctus, tristique interdum ligula. Curabitur orci lorem, dignissim et dui non, faucibus tempor quam. Praesent eros mauris, dignissim eu augue in, cursus scelerisque nisl. Pellentesque eu ligula nisl.
+
+Mauris pretium blandit lacus sed suscipit. Praesent non aliquam est, eget porta sem. Aliquam ac aliquam sapien, eget consectetur neque. Donec pharetra gravida dui, et sollicitudin odio molestie eget. Nam ac ornare nisl, ac feugiat quam. Nulla efficitur massa non sapien ornare malesuada. Nunc molestie hendrerit feugiat. Integer quis erat lobortis, facilisis ante in, pulvinar nisl. Nullam ipsum erat, mollis et odio sit amet, finibus dignissim purus. Mauris consectetur ornare porta.
+
+Morbi volutpat interdum auctor. Integer viverra egestas erat, tincidunt tristique nibh elementum vel. Fusce bibendum ac lacus quis mattis. Quisque at vestibulum est, a dignissim leo. Quisque lacinia risus eu iaculis vestibulum. Aliquam fermentum scelerisque ultrices. Aliquam erat volutpat. Vivamus at ex odio. Duis consectetur ipsum sit amet tellus feugiat, faucibus maximus neque volutpat. Ut congue diam id enim euismod interdum.
+
+Praesent gravida orci a diam faucibus porttitor. Integer bibendum, urna at mollis consequat, sem neque bibendum tellus, at efficitur tortor ex et sapien. Quisque dapibus tortor in sapien ornare viverra non at orci. Morbi pretium, arcu a mollis dictum, nulla urna hendrerit arcu, ut finibus arcu nisl ut sem. Nunc hendrerit mauris enim. Aenean fermentum ut tellus ac varius. Praesent in commodo orci. Fusce eget posuere ligula, et elementum ante.
+
+Nam eget molestie ex, ac varius ipsum. Nulla eleifend lacinia volutpat. Vestibulum non nisl eget enim luctus feugiat quis sit amet lorem. Donec sed purus scelerisque, rhoncus metus mollis, efficitur nunc. Proin velit sapien, congue ullamcorper mi sed, luctus porta turpis. Vestibulum semper finibus feugiat. Maecenas convallis lectus quis erat efficitur, id volutpat justo dapibus. Praesent aliquam leo eu sapien vulputate, vel lacinia tortor tempus. Fusce sodales aliquam sollicitudin. Pellentesque cursus vulputate mauris, quis vestibulum quam malesuada vel. Nulla leo magna, pretium quis magna in, posuere dignissim lectus.
+
+Sed accumsan lectus ut sollicitudin consequat. Aliquam cursus orci eu purus vulputate sagittis. Suspendisse aliquet turpis et varius commodo. Ut tincidunt sapien quis purus scelerisque, eget congue urna tristique. Sed sit amet volutpat sapien, non faucibus lectus. Fusce laoreet congue rutrum. Nulla dapibus felis sit amet fringilla pretium. Donec in efficitur libero. Mauris eget tellus arcu. Mauris commodo lobortis turpis, vel vehicula tellus pellentesque a. Pellentesque nec quam vulputate nisl lacinia volutpat.
+
+Mauris viverra, neque sit amet tempor mollis, lectus sapien dignissim ligula, nec porta lectus dui ut quam. Integer a efficitur lacus, nec egestas elit. Nunc ante tortor, porttitor a hendrerit in, pharetra sit amet ipsum. Duis ut malesuada quam, ornare rutrum lorem. Duis nec ligula id ipsum pharetra consequat. Phasellus mattis, odio eget efficitur bibendum, mi elit malesuada diam, in pulvinar leo diam vitae dolor. Nulla efficitur ex et ante tempus condimentum.
+
+Morbi lectus risus, venenatis sit amet rutrum at, sagittis sed est. Donec suscipit leo at ipsum lacinia, id varius magna viverra. Nullam orci libero, mollis ut tellus at, vulputate dictum augue. Maecenas vitae auctor odio. Donec nisi erat, semper et leo sed, sollicitudin volutpat metus. Aliquam egestas nibh nec magna aliquam, a sodales ex sodales. Vestibulum aliquet ante eget velit fringilla interdum. Maecenas rhoncus dui et varius luctus. Quisque vestibulum tempus felis. Vestibulum eu sodales urna. Curabitur feugiat dui sed augue condimentum congue. Ut dapibus lorem quis felis elementum, sit amet placerat libero malesuada. Donec purus velit, varius eget leo eu, congue efficitur quam. Integer convallis in libero nec luctus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Quisque euismod nulla at diam condimentum euismod.
+
+Proin quis sem viverra, sodales tellus cursus, dapibus nulla. Phasellus elit orci, posuere nec tellus nec, porta elementum lorem. Mauris id arcu nisi. Duis quis ullamcorper arcu, laoreet ullamcorper nisi. Cras faucibus in nisl sit amet facilisis. Nunc tortor mauris, congue sit amet imperdiet at, fermentum id sem. Phasellus vel feugiat nibh, nec condimentum lorem. Donec vulputate tortor sem, id dapibus mauris dictum accumsan. Quisque condimentum, quam et euismod pretium, odio velit sagittis nulla, a pretium leo sapien sit amet odio. Fusce semper urna non consequat semper. Aenean placerat tellus malesuada, mattis diam vel, tempus diam. Vestibulum tristique nisi nec tellus elementum congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Proin scelerisque lorem eget facilisis tincidunt.
+
+Donec mattis pretium sapien, vel laoreet libero bibendum eu. Duis neque nisl, rutrum eget condimentum id, malesuada sed velit. Cras volutpat molestie quam, a aliquet neque blandit accumsan. Vestibulum semper metus vitae lacus suscipit, ut maximus urna cursus. Aliquam non libero nulla. Etiam tincidunt viverra velit vitae pulvinar. Morbi finibus est non neque ultrices rutrum. Mauris ut velit eu mi dapibus dictum nec varius nunc. Maecenas lobortis malesuada massa, at vulputate tortor interdum eu. Morbi sodales nulla in elit porttitor porttitor. Phasellus sit amet ultrices tortor. Nullam nisi tortor, accumsan at blandit eu, molestie eu enim. Nullam non porta justo, at varius odio. Suspendisse vitae erat urna. Mauris ornare posuere augue sit amet finibus. Praesent fringilla dui et erat vehicula maximus.
+
+Fusce orci mauris, lobortis nec aliquam et, egestas quis dolor. Aliquam viverra pretium neque, vitae rutrum risus accumsan sed. Praesent venenatis elementum ultrices. Curabitur sit amet semper velit, vitae eleifend nibh. Aenean mauris arcu, congue at mollis quis, tempor tempor sapien. Proin placerat metus purus, ac dictum felis euismod sed. Aenean ullamcorper mauris nec tincidunt sollicitudin. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+
+Nullam nisi sapien, mollis commodo dui ut, aliquam tristique ligula. Morbi tempus maximus mollis. In vehicula tempor ex, a placerat est pharetra et. Nullam ut est sit amet mauris euismod commodo. Morbi elementum iaculis arcu. Vestibulum fermentum, enim a tincidunt rutrum, enim ex pellentesque orci, eget mollis urna sapien nec massa. Donec tempus eros sed ex vestibulum, sit amet faucibus ligula vestibulum. Duis a est diam. Fusce euismod, eros et elementum euismod, diam neque maximus tortor, at convallis arcu lorem ac leo. Maecenas erat lorem, vestibulum eget massa posuere, mattis ullamcorper tellus. Nunc et elit vitae tortor molestie volutpat. </stringProp>
+            <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="URL"></stringProp>
+            <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+          </kg.apc.jmeter.samplers.DummySampler>
+          <hashTree/>
+        </hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="C07-Submit Order" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">true</boolProp>
+        </TransactionController>
+        <hashTree>
+          <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="C07-Submit Order ${__P(location, Poland)}" enabled="true">
+            <boolProp name="WAITING">true</boolProp>
+            <boolProp name="SUCCESFULL">true</boolProp>
+            <stringProp name="RESPONSE_CODE">200</stringProp>
+            <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+            <stringProp name="REQUEST_DATA"></stringProp>
+            <stringProp name="RESPONSE_DATA">
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla eget sagittis diam. Curabitur ultricies blandit orci. Donec tristique eleifend pellentesque. Vestibulum a quam nunc. Nunc aliquam lacus a justo ultricies, in sodales sapien tincidunt. Aliquam varius turpis id nisi aliquet, vitae tincidunt nisi volutpat. Praesent sollicitudin lorem quis lectus tincidunt tincidunt.
+
+Pellentesque viverra dolor tincidunt arcu sollicitudin finibus. Donec non elit sit amet velit varius lobortis. Quisque facilisis sagittis neque, et efficitur elit sollicitudin sit amet. In vitae augue at sem sodales mollis eu a diam. Ut risus mi, ullamcorper hendrerit pharetra a, euismod et eros. Aliquam vel erat hendrerit, scelerisque tortor sed, pretium ex. Quisque dolor sapien, imperdiet quis vestibulum a, ultrices et elit. Praesent varius ligula sit amet orci eleifend, vitae vehicula eros interdum. Donec vel suscipit ligula. Curabitur blandit purus non dapibus vestibulum. Vivamus aliquam purus vitae justo mollis finibus. Maecenas suscipit commodo consectetur. Ut sit amet fermentum leo. Vivamus at elit varius, elementum mauris id, feugiat diam.
+
+Cras lacinia mauris eget erat semper, in dapibus velit finibus. Duis finibus quam quam, vel rutrum urna ultrices et. Morbi ornare scelerisque tincidunt. Nulla quis nibh urna. Nullam sodales fermentum urna, sed consequat velit pretium mattis. Vestibulum elementum enim euismod lacus gravida, at hendrerit metus lacinia. Maecenas varius a ante non porttitor. Sed enim quam, convallis pellentesque egestas vel, ullamcorper vel neque.
+
+Proin cursus efficitur placerat. Morbi lacinia felis eu magna suscipit rutrum. Mauris ex risus, dignissim at luctus et, pellentesque non erat. Integer sit amet urna tortor. Nunc et condimentum massa, vel fermentum nunc. Ut euismod mi ante, euismod commodo elit sodales in. Nunc fringilla vulputate turpis, id dictum quam scelerisque eu.
+
+Sed eu nunc non nisi mollis tempor a eget est. Nullam tellus arcu, facilisis sed aliquet eu, facilisis eget urna. Fusce lacus felis, iaculis vel pharetra sit amet, semper eget purus. Pellentesque nulla ipsum, tempus sit amet arcu ac, vestibulum venenatis enim. Nam ac varius velit. Vivamus tincidunt metus augue. Nunc congue ex augue, id vestibulum sem hendrerit eu. Fusce rutrum dui eu purus porta vulputate. Duis facilisis odio et pellentesque sollicitudin. Etiam mattis libero non nunc fringilla, ac auctor sapien tincidunt. Etiam nulla elit, vulputate vitae magna a, finibus tempus orci. Maecenas ac enim dictum, scelerisque justo vitae, hendrerit diam. Quisque suscipit lorem ipsum, et placerat mi sollicitudin convallis.
+
+Maecenas a diam sit amet lacus commodo varius. Maecenas consectetur arcu a neque venenatis luctus. Suspendisse vitae interdum augue. Pellentesque tempus tellus vel ante bibendum, quis sagittis nisl rhoncus. Sed consectetur lacinia sapien ac interdum. Mauris pulvinar, est ac rutrum semper, ex sapien aliquam eros, a volutpat sem dolor non dui. Mauris sem nisi, luctus non consectetur ac, bibendum id mauris. Nunc dictum convallis cursus. Nullam a consequat nisl. Donec nec metus elementum, iaculis enim et, porttitor nibh. Suspendisse porta nibh ipsum, vitae vulputate quam fringilla sit amet. Quisque hendrerit velit dolor, et gravida augue pellentesque non. Cras egestas posuere malesuada. Nam eleifend lectus vitae justo congue, sed venenatis nisi tempor. Cras consequat, nisi sit amet auctor pharetra, sapien augue euismod augue, non lobortis nibh ex et nulla.
+
+Donec ultrices purus dui, ac tristique justo iaculis vitae. Donec ac elit vel nunc hendrerit mollis. Mauris mattis ligula fringilla quam pulvinar, sit amet finibus lacus elementum. Integer non diam non ante tincidunt facilisis ut quis nibh. Nam pulvinar fringilla felis. Nunc vel velit cursus, commodo quam nec, finibus nisi. Aliquam eget faucibus urna. Praesent malesuada eros vel tellus blandit, sed varius nulla luctus. Donec vel porta arcu. Nulla nunc libero, laoreet ornare fringilla sit amet, consectetur at sapien. Maecenas ultrices finibus sodales.
+
+Cras eget turpis vel nibh eleifend consequat at pretium leo. In mattis fermentum dapibus. Curabitur ac mauris leo. Aenean et mollis enim, eu feugiat metus. Nulla facilisi. Maecenas eleifend faucibus turpis a sagittis. Sed vitae egestas elit. Fusce congue quis nisl sit amet tincidunt. Quisque at semper felis, at congue leo.
+
+Mauris vestibulum felis magna, et iaculis ligula cursus in. Donec porta, magna eget viverra interdum, nisl ligula pretium diam, sit amet pellentesque purus eros nec nibh. Nam at justo leo. Proin imperdiet lorem a consectetur ultricies. Donec diam lorem, molestie non dignissim id, pretium id arcu. Phasellus sed gravida leo. Duis consectetur dui purus, eget congue ipsum mollis sed. Sed sed sem sit amet massa posuere porta. Aenean quis bibendum lorem. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean iaculis ornare nibh in blandit.
+
+Aenean sit amet quam feugiat, tincidunt massa posuere, dignissim enim. Donec tristique justo vel diam tempor, vitae dictum nunc molestie. Aenean egestas porttitor dui non consequat. Nam sed turpis fringilla, interdum velit eu, tempor orci. Etiam tincidunt fringilla augue, sit amet euismod mi congue quis. Nam semper posuere quam, ut tristique risus sollicitudin a. Quisque eu molestie metus, luctus maximus orci.
+
+Donec facilisis justo a consequat sodales. Mauris non justo in nisl commodo suscipit rutrum in erat. Nunc ultrices ultricies urna sed hendrerit. Vestibulum tincidunt dignissim magna, vitae bibendum leo ultricies ac. Vivamus ullamcorper rutrum nunc ac consectetur. Etiam at justo ac erat convallis vulputate. Donec vel vestibulum turpis. Vivamus et odio commodo, porta mauris non, porttitor ante. Ut mattis auctor purus, vel tincidunt dui blandit a. Nulla sollicitudin leo sit amet arcu accumsan, sed rutrum nisl auctor. Vivamus blandit urna ac cursus rutrum. Pellentesque in fermentum purus.
+
+Cras augue dui, sodales eget pulvinar ac, maximus id elit. Integer pulvinar urna erat, non placerat leo volutpat ut. Proin sit amet suscipit sapien. Praesent nec vulputate justo. Cras ac maximus dolor. Mauris imperdiet urna nec viverra porttitor. Integer venenatis dolor vitae ante dignissim tempor. Nullam auctor lorem enim, sit amet malesuada tellus iaculis et. Nam rhoncus facilisis suscipit. Suspendisse potenti. Vivamus at eleifend mi. Duis viverra lacus dui, nec condimentum risus imperdiet ac. Fusce ex eros, dapibus ac purus a, aliquet iaculis purus. Sed pellentesque purus ullamcorper facilisis aliquet.
+
+Mauris ultricies orci imperdiet sem rhoncus, a molestie ex pulvinar. Vestibulum quis metus augue. Proin ac nunc porttitor, hendrerit erat vitae, viverra odio. Maecenas purus mi, accumsan at nisi luctus, tristique interdum ligula. Curabitur orci lorem, dignissim et dui non, faucibus tempor quam. Praesent eros mauris, dignissim eu augue in, cursus scelerisque nisl. Pellentesque eu ligula nisl.
+
+Mauris pretium blandit lacus sed suscipit. Praesent non aliquam est, eget porta sem. Aliquam ac aliquam sapien, eget consectetur neque. Donec pharetra gravida dui, et sollicitudin odio molestie eget. Nam ac ornare nisl, ac feugiat quam. Nulla efficitur massa non sapien ornare malesuada. Nunc molestie hendrerit feugiat. Integer quis erat lobortis, facilisis ante in, pulvinar nisl. Nullam ipsum erat, mollis et odio sit amet, finibus dignissim purus. Mauris consectetur ornare porta.
+
+Morbi volutpat interdum auctor. Integer viverra egestas erat, tincidunt tristique nibh elementum vel. Fusce bibendum ac lacus quis mattis. Quisque at vestibulum est, a dignissim leo. Quisque lacinia risus eu iaculis vestibulum. Aliquam fermentum scelerisque ultrices. Aliquam erat volutpat. Vivamus at ex odio. Duis consectetur ipsum sit amet tellus feugiat, faucibus maximus neque volutpat. Ut congue diam id enim euismod interdum.
+
+Praesent gravida orci a diam faucibus porttitor. Integer bibendum, urna at mollis consequat, sem neque bibendum tellus, at efficitur tortor ex et sapien. Quisque dapibus tortor in sapien ornare viverra non at orci. Morbi pretium, arcu a mollis dictum, nulla urna hendrerit arcu, ut finibus arcu nisl ut sem. Nunc hendrerit mauris enim. Aenean fermentum ut tellus ac varius. Praesent in commodo orci. Fusce eget posuere ligula, et elementum ante.
+
+Nam eget molestie ex, ac varius ipsum. Nulla eleifend lacinia volutpat. Vestibulum non nisl eget enim luctus feugiat quis sit amet lorem. Donec sed purus scelerisque, rhoncus metus mollis, efficitur nunc. Proin velit sapien, congue ullamcorper mi sed, luctus porta turpis. Vestibulum semper finibus feugiat. Maecenas convallis lectus quis erat efficitur, id volutpat justo dapibus. Praesent aliquam leo eu sapien vulputate, vel lacinia tortor tempus. Fusce sodales aliquam sollicitudin. Pellentesque cursus vulputate mauris, quis vestibulum quam malesuada vel. Nulla leo magna, pretium quis magna in, posuere dignissim lectus.
+
+Sed accumsan lectus ut sollicitudin consequat. Aliquam cursus orci eu purus vulputate sagittis. Suspendisse aliquet turpis et varius commodo. Ut tincidunt sapien quis purus scelerisque, eget congue urna tristique. Sed sit amet volutpat sapien, non faucibus lectus. Fusce laoreet congue rutrum. Nulla dapibus felis sit amet fringilla pretium. Donec in efficitur libero. Mauris eget tellus arcu. Mauris commodo lobortis turpis, vel vehicula tellus pellentesque a. Pellentesque nec quam vulputate nisl lacinia volutpat.
+
+Mauris viverra, neque sit amet tempor mollis, lectus sapien dignissim ligula, nec porta lectus dui ut quam. Integer a efficitur lacus, nec egestas elit. Nunc ante tortor, porttitor a hendrerit in, pharetra sit amet ipsum. Duis ut malesuada quam, ornare rutrum lorem. Duis nec ligula id ipsum pharetra consequat. Phasellus mattis, odio eget efficitur bibendum, mi elit malesuada diam, in pulvinar leo diam vitae dolor. Nulla efficitur ex et ante tempus condimentum.
+
+Morbi lectus risus, venenatis sit amet rutrum at, sagittis sed est. Donec suscipit leo at ipsum lacinia, id varius magna viverra. Nullam orci libero, mollis ut tellus at, vulputate dictum augue. Maecenas vitae auctor odio. Donec nisi erat, semper et leo sed, sollicitudin volutpat metus. Aliquam egestas nibh nec magna aliquam, a sodales ex sodales. Vestibulum aliquet ante eget velit fringilla interdum. Maecenas rhoncus dui et varius luctus. Quisque vestibulum tempus felis. Vestibulum eu sodales urna. Curabitur feugiat dui sed augue condimentum congue. Ut dapibus lorem quis felis elementum, sit amet placerat libero malesuada. Donec purus velit, varius eget leo eu, congue efficitur quam. Integer convallis in libero nec luctus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Quisque euismod nulla at diam condimentum euismod.
+
+Proin quis sem viverra, sodales tellus cursus, dapibus nulla. Phasellus elit orci, posuere nec tellus nec, porta elementum lorem. Mauris id arcu nisi. Duis quis ullamcorper arcu, laoreet ullamcorper nisi. Cras faucibus in nisl sit amet facilisis. Nunc tortor mauris, congue sit amet imperdiet at, fermentum id sem. Phasellus vel feugiat nibh, nec condimentum lorem. Donec vulputate tortor sem, id dapibus mauris dictum accumsan. Quisque condimentum, quam et euismod pretium, odio velit sagittis nulla, a pretium leo sapien sit amet odio. Fusce semper urna non consequat semper. Aenean placerat tellus malesuada, mattis diam vel, tempus diam. Vestibulum tristique nisi nec tellus elementum congue. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Proin scelerisque lorem eget facilisis tincidunt.
+
+Donec mattis pretium sapien, vel laoreet libero bibendum eu. Duis neque nisl, rutrum eget condimentum id, malesuada sed velit. Cras volutpat molestie quam, a aliquet neque blandit accumsan. Vestibulum semper metus vitae lacus suscipit, ut maximus urna cursus. Aliquam non libero nulla. Etiam tincidunt viverra velit vitae pulvinar. Morbi finibus est non neque ultrices rutrum. Mauris ut velit eu mi dapibus dictum nec varius nunc. Maecenas lobortis malesuada massa, at vulputate tortor interdum eu. Morbi sodales nulla in elit porttitor porttitor. Phasellus sit amet ultrices tortor. Nullam nisi tortor, accumsan at blandit eu, molestie eu enim. Nullam non porta justo, at varius odio. Suspendisse vitae erat urna. Mauris ornare posuere augue sit amet finibus. Praesent fringilla dui et erat vehicula maximus.
+
+Fusce orci mauris, lobortis nec aliquam et, egestas quis dolor. Aliquam viverra pretium neque, vitae rutrum risus accumsan sed. Praesent venenatis elementum ultrices. Curabitur sit amet semper velit, vitae eleifend nibh. Aenean mauris arcu, congue at mollis quis, tempor tempor sapien. Proin placerat metus purus, ac dictum felis euismod sed. Aenean ullamcorper mauris nec tincidunt sollicitudin. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+
+Nullam nisi sapien, mollis commodo dui ut, aliquam tristique ligula. Morbi tempus maximus mollis. In vehicula tempor ex, a placerat est pharetra et. Nullam ut est sit amet mauris euismod commodo. Morbi elementum iaculis arcu. Vestibulum fermentum, enim a tincidunt rutrum, enim ex pellentesque orci, eget mollis urna sapien nec massa. Donec tempus eros sed ex vestibulum, sit amet faucibus ligula vestibulum. Duis a est diam. Fusce euismod, eros et elementum euismod, diam neque maximus tortor, at convallis arcu lorem ac leo. Maecenas erat lorem, vestibulum eget massa posuere, mattis ullamcorper tellus. Nunc et elit vitae tortor molestie volutpat. </stringProp>
+            <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="URL"></stringProp>
+            <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+          </kg.apc.jmeter.samplers.DummySampler>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="S00-US Special Offers" enabled="true">
+        <stringProp name="TestPlan.comments">This thread group is only launching on US-based devices</stringProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <intProp name="LoopController.loops">-1</intProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">${__groovy (vars.get(&quot;location&quot;) == &quot;US&quot; ? 1 : 0;,)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+        <stringProp name="ThreadGroup.duration">${__P(USSpecialOffersDuration,100)}</stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <boolProp name="ThreadGroup.delayedStart">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="S01-Open Index Page" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">true</boolProp>
+        </TransactionController>
+        <hashTree>
+          <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="S01-Open Index Page ${__P(location, Poland)}" enabled="true">
+            <boolProp name="WAITING">true</boolProp>
+            <boolProp name="SUCCESFULL">true</boolProp>
+            <stringProp name="RESPONSE_CODE">200</stringProp>
+            <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+            <stringProp name="REQUEST_DATA"></stringProp>
+            <stringProp name="RESPONSE_DATA">&lt;html lang=en&gt; 
+&lt;head\&gt;
+
+&lt;body&gt;
+Welcome to our shop!
+Our merchendise is always available, even when our website says otherwise!
+&lt;/body&gt;
+&lt;html&gt;
+</stringProp>
+            <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="URL"></stringProp>
+            <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+          </kg.apc.jmeter.samplers.DummySampler>
+          <hashTree/>
+        </hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="S02-Log In" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">true</boolProp>
+        </TransactionController>
+        <hashTree>
+          <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="S02-Log In ${__P(location, Poland)}" enabled="true">
+            <boolProp name="WAITING">true</boolProp>
+            <boolProp name="SUCCESFULL">true</boolProp>
+            <stringProp name="RESPONSE_CODE">200</stringProp>
+            <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+            <stringProp name="REQUEST_DATA">{
+   &quot;username&quot; : &quot;${username}&quot;,
+   &quot;password&quot; : &quot;${password}&quot;
+}</stringProp>
+            <stringProp name="RESPONSE_DATA">{
+  &quot;session&quot; : &quot;${__RandomString(15,abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPRSTUWXYZ)}&quot;
+}</stringProp>
+            <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="URL"></stringProp>
+            <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+          </kg.apc.jmeter.samplers.DummySampler>
+          <hashTree>
+            <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Session Extractor" enabled="true">
+              <stringProp name="JSONPostProcessor.referenceNames">SESSION</stringProp>
+              <stringProp name="JSONPostProcessor.jsonPathExprs">$.session</stringProp>
+              <stringProp name="JSONPostProcessor.match_numbers">0</stringProp>
+              <stringProp name="TestPlan.comments">Extracts the session parameter from response </stringProp>
+            </JSONPostProcessor>
+            <hashTree/>
+            <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
+              <stringProp name="delimiter">,</stringProp>
+              <stringProp name="fileEncoding"></stringProp>
+              <stringProp name="filename">special-offer-users-${deviceID}.csv</stringProp>
+              <boolProp name="ignoreFirstLine">true</boolProp>
+              <boolProp name="quotedData">false</boolProp>
+              <boolProp name="recycle">true</boolProp>
+              <stringProp name="shareMode">shareMode.all</stringProp>
+              <boolProp name="stopThread">false</boolProp>
+              <stringProp name="variableNames">username,password</stringProp>
+            </CSVDataSet>
+            <hashTree/>
+          </hashTree>
+        </hashTree>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="S03-Open Special Offers" enabled="true">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+          <boolProp name="TransactionController.parent">true</boolProp>
+        </TransactionController>
+        <hashTree>
+          <kg.apc.jmeter.samplers.DummySampler guiclass="kg.apc.jmeter.samplers.DummySamplerGui" testclass="kg.apc.jmeter.samplers.DummySampler" testname="S03-Open Special Offers ${__P(location, Poland)}" enabled="true">
+            <boolProp name="WAITING">true</boolProp>
+            <boolProp name="SUCCESFULL">true</boolProp>
+            <stringProp name="RESPONSE_CODE">200</stringProp>
+            <stringProp name="RESPONSE_MESSAGE">OK</stringProp>
+            <stringProp name="REQUEST_DATA"></stringProp>
+            <stringProp name="RESPONSE_DATA">{
+ &quot;products&quot; : [
+     { &quot;productId&quot; : 1, &quot;name&quot; : &quot;First Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 2, &quot;name&quot; : &quot;Second Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 3, &quot;name&quot; : &quot;Third Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 4, &quot;name&quot; : &quot;Fourth Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 5, &quot;name&quot; : &quot;Fifth Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+     { &quot;productId&quot; : 6, &quot;name&quot; : &quot;Sixth Product on the list&quot;, &quot;description&quot; : &quot;&quot;}
+   ]
+} </stringProp>
+            <stringProp name="RESPONSE_TIME">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="LATENCY">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="CONNECT">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="URL"></stringProp>
+            <stringProp name="RESULT_CLASS">org.apache.jmeter.samplers.SampleResult</stringProp>
+          </kg.apc.jmeter.samplers.DummySampler>
+          <hashTree>
+            <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="JSON Extractor" enabled="true">
+              <stringProp name="JSONPostProcessor.referenceNames">Product</stringProp>
+              <stringProp name="JSONPostProcessor.jsonPathExprs">$.products[*].productId</stringProp>
+              <stringProp name="JSONPostProcessor.match_numbers">0</stringProp>
+            </JSONPostProcessor>
+            <hashTree/>
+          </hashTree>
+        </hashTree>
+      </hashTree>
+      <BackendListener guiclass="BackendListenerGui" testclass="BackendListener" testname="Backend Listener" enabled="true">
+        <elementProp name="arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" enabled="true">
+          <collectionProp name="Arguments.arguments">
+            <elementProp name="influxdbMetricsSender" elementType="Argument">
+              <stringProp name="Argument.name">influxdbMetricsSender</stringProp>
+              <stringProp name="Argument.value">org.apache.jmeter.visualizers.backend.influxdb.HttpMetricsSender</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="influxdbUrl" elementType="Argument">
+              <stringProp name="Argument.name">influxdbUrl</stringProp>
+              <stringProp name="Argument.value">http://${__P(influxHost, 83.8.188.162)}:8086/write?db=jmeter</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="application" elementType="Argument">
+              <stringProp name="Argument.name">application</stringProp>
+              <stringProp name="Argument.value">application name</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="measurement" elementType="Argument">
+              <stringProp name="Argument.name">measurement</stringProp>
+              <stringProp name="Argument.value">jmeter</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="summaryOnly" elementType="Argument">
+              <stringProp name="Argument.name">summaryOnly</stringProp>
+              <stringProp name="Argument.value">false</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="samplersRegex" elementType="Argument">
+              <stringProp name="Argument.name">samplersRegex</stringProp>
+              <stringProp name="Argument.value">.*</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="percentiles" elementType="Argument">
+              <stringProp name="Argument.name">percentiles</stringProp>
+              <stringProp name="Argument.value">90;95;99</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="testTitle" elementType="Argument">
+              <stringProp name="Argument.name">testTitle</stringProp>
+              <stringProp name="Argument.value">Test name</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="eventTags" elementType="Argument">
+              <stringProp name="Argument.name">eventTags</stringProp>
+              <stringProp name="Argument.value"></stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="TAG_lon" elementType="Argument">
+              <stringProp name="Argument.name">TAG_lon</stringProp>
+              <stringProp name="Argument.value">${__P(lon, 18.36554251807528)}</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="TAG_lat" elementType="Argument">
+              <stringProp name="Argument.name">TAG_lat</stringProp>
+              <stringProp name="Argument.value">${__P(lat, 54.36323546111365)}</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="TAG_location" elementType="Argument">
+              <stringProp name="Argument.name">TAG_location</stringProp>
+              <stringProp name="Argument.value">${__P(location, Poland)}</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="TAG_device" elementType="Argument">
+              <stringProp name="Argument.name">TAG_device</stringProp>
+              <stringProp name="Argument.value">${__P(deviceId, 1)}</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+          </collectionProp>
+        </elementProp>
+        <stringProp name="TestPlan.comments">Influx Backend Listener  - captures all the samplers with &quot;-INF&quot; suffix</stringProp>
+        <stringProp name="classname">org.apache.jmeter.visualizers.backend.influxdb.InfluxdbBackendListenerClient</stringProp>
+      </BackendListener>
+      <hashTree/>
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="false">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
+      <hashTree/>
+      <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+        <collectionProp name="HeaderManager.headers">
+          <elementProp name="" elementType="Header">
+            <stringProp name="Header.name">accept-language</stringProp>
+            <stringProp name="Header.value">${__P(language, en-us)}</stringProp>
+          </elementProp>
+        </collectionProp>
+      </HeaderManager>
+      <hashTree/>
+      <CacheManager guiclass="CacheManagerGui" testclass="CacheManager" testname="HTTP Cache Manager" enabled="true">
+        <boolProp name="clearEachIteration">false</boolProp>
+        <boolProp name="useExpires">true</boolProp>
+        <boolProp name="CacheManager.controlledByThread">false</boolProp>
+      </CacheManager>
+      <hashTree/>
+      <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="Conversion of common properties to variables" enabled="true">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="deviceID" elementType="Argument">
+            <stringProp name="Argument.name">deviceID</stringProp>
+            <stringProp name="Argument.value">${__P(deviceId, 1)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="location" elementType="Argument">
+            <stringProp name="Argument.name">location</stringProp>
+            <stringProp name="Argument.value">${__P(location, Poland)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="deviceIDFormat" elementType="Argument">
+            <stringProp name="Argument.name">deviceIDFormat</stringProp>
+            <stringProp name="Argument.value">${__P(deviceIdFormat, &quot;%03d&quot;)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="formattedDeviceID" elementType="Argument">
+            <stringProp name="Argument.name">formattedDeviceID</stringProp>
+            <stringProp name="Argument.value">${__groovy(String.format(vars.get(&quot;deviceIDFormat)\, vars.get(&quot;deviceId&quot;)),)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="ConnectTimeDelay" elementType="Argument">
+            <stringProp name="Argument.name">ConnectTimeDelay</stringProp>
+            <stringProp name="Argument.value">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(1\, 5);,)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="LatencyDelay" elementType="Argument">
+            <stringProp name="Argument.name">LatencyDelay</stringProp>
+            <stringProp name="Argument.value">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(30\, 60);,)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="ResponseTimeDelay" elementType="Argument">
+            <stringProp name="Argument.name">ResponseTimeDelay</stringProp>
+            <stringProp name="Argument.value">${__groovy(Integer.parseInt(String.valueOf(props.get(&quot;CONSTANT_LATENCY&quot;))) + org.apache.commons.lang3.RandomUtils.nextInt(150\, 300);,)}</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </Arguments>
+      <hashTree/>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

@@ -1,0 +1,33 @@
+{
+    "defaults": {
+        "filter": {
+            "dar": ">=70",
+            "storage": ">=2000000000"
+        },
+        "workerDir": "CommonWorker",
+        "jmxFile": "GlobalTestExample.jmx",
+        "jtlFile": "VRT.jtl",
+        "planDuration": 600,
+
+        "rampStepDuration": 60,
+        "SLOResponseTimeMax": 2.5,
+        "SLODuration": 300
+    },
+    "batches": [
+        {
+            "regions": ["US"],
+            "nWorkers": 4,
+            "workerDir" : "USWorker"
+        },
+        {
+            "regions": ["Russia"],
+            "nWorkers": 2,
+            "workerDir" : "RussiaWorker"
+        },
+        {
+            "regions": ["Europe"],
+            "nWorkers": 2,
+            "workerDir" : "EuropeWorker"
+        }
+    ]
+}
