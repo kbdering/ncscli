@@ -680,7 +680,7 @@ Our merchendise is always available, even when our website says otherwise!
             </elementProp>
             <elementProp name="influxdbUrl" elementType="Argument">
               <stringProp name="Argument.name">influxdbUrl</stringProp>
-              <stringProp name="Argument.value">http://${__P(influxHost, 83.8.188.162)}:8086/write?db=jmeter</stringProp>
+              <stringProp name="Argument.value">http://${__P(influxHost, 127.0.0.1)}:8086/write?db=jmeter</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
             <elementProp name="application" elementType="Argument">
