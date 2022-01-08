@@ -735,7 +735,7 @@ Our merchendise is always available, even when our website says otherwise!
             </elementProp>
             <elementProp name="TAG_device" elementType="Argument">
               <stringProp name="Argument.name">TAG_device</stringProp>
-              <stringProp name="Argument.value">${__P(deviceId, 1)}</stringProp>
+              <stringProp name="Argument.value">${__P(neocortix.instanceNum, 1)}-${location}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -800,7 +800,7 @@ Our merchendise is always available, even when our website says otherwise!
         <collectionProp name="Arguments.arguments">
           <elementProp name="deviceID" elementType="Argument">
             <stringProp name="Argument.name">deviceID</stringProp>
-            <stringProp name="Argument.value">${__P(deviceId, 1)}</stringProp>
+            <stringProp name="Argument.value">${__P(neocortix.instanceNum, 1)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="location" elementType="Argument">

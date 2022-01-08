@@ -6,7 +6,6 @@
         },
         "workerDir": "CommonWorker",
         "jmxFile": "GlobalTestExample.jmx",
-        "jtlFile": "VRT.jtl",
         "planDuration": 600,
 
         "rampStepDuration": 60,
